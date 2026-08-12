@@ -10,7 +10,7 @@ vi.mock("@/components/ui/button", () => ({ Button: ({ children, ...props }: any)
 vi.mock("@/components/ui/input", () => ({ Input: (props: any) => <input {...props} /> }));
 vi.mock("@/components/ui/dialog", () => ({ Dialog: ({ children }: any) => <>{children}</>, DialogContent: ({ children }: any) => <div>{children}</div>, DialogDescription: ({ children }: any) => <p>{children}</p>, DialogHeader: ({ children }: any) => <div>{children}</div>, DialogTitle: ({ children }: any) => <h2>{children}</h2> }));
 
-import { BulkPdfExporter } from "./BulkPdfExporter";
+import { BulkPdfExporter, pdfTradeCardFields } from "./BulkPdfExporter";
 
 describe("BulkPdfExporter", () => {
   afterEach(() => cleanup());
@@ -23,5 +23,12 @@ describe("BulkPdfExporter", () => {
     fireEvent.click(screen.getByRole("button", { name: /Custom date range/i }));
     expect(screen.getByLabelText("From")).toBeTruthy();
     expect(screen.getByLabelText("To")).toBeTruthy();
+  });
+
+  it("allows only trader-facing execution fields into every exported trade card", () => {
+    const fields = pdfTradeCardFields({ id: 7, userId: 21, accountId: 3, screenshotKey: "gold-journal/21/trades/7.png", screenshotName: "private-entry.png", createdAt: new Date(), updatedAt: new Date(), session: "London", level: "RBS", timeframe: "15m", setupQuality: "A", risk: 20, reward: 80, pnl: 60 });
+    expect(fields.map(([label]) => label)).toEqual(["Session", "Level", "Timeframe", "Setup", "Risk", "Reward", "R:R", "P&L"]);
+    expect(JSON.stringify(fields)).not.toContain("gold-journal/");
+    expect(JSON.stringify(fields)).not.toContain("private-entry.png");
   });
 });

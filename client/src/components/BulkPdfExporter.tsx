@@ -19,6 +19,7 @@ function setPageBackground(pdf: jsPDF) { pdf.setFillColor(...colors.bg); pdf.rec
 function fetchImageData(url: string) { return fetch(url).then(response => { if (!response.ok) throw new Error("Screenshot unavailable"); return response.blob(); }).then(blob => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); })); }
 function sectionTitle(pdf: jsPDF, label: string, title: string) { pdf.setTextColor(...colors.gold); pdf.setFontSize(8); pdf.text(label.toUpperCase(), page.margin, 18); pdf.setTextColor(...colors.text); pdf.setFontSize(20); pdf.text(title, page.margin, 29); }
 function addWrapped(pdf: jsPDF, value: string, x: number, y: number, width: number, lineHeight = 4.5) { const lines = pdf.splitTextToSize(value || "—", width); pdf.text(lines, x, y); return y + lines.length * lineHeight; }
+export function pdfTradeCardFields(trade: any) { return [["Session", trade.session], ["Level", trade.level || "—"], ["Timeframe", trade.timeframe || "—"], ["Setup", trade.setupQuality || "—"], ["Risk", formatMoney(trade.risk)], ["Reward", formatMoney(trade.reward)], ["R:R", formatRr(trade.risk, trade.reward)], ["P&L", formatMoney(trade.pnl)]] as const; }
 
 export function BulkPdfExporter() {
   const { isAuthenticated } = useAuth();
@@ -58,7 +59,7 @@ export function BulkPdfExporter() {
         pdf.addPage(); setPageBackground(pdf);
         sectionTitle(pdf, `Trade card ${String(index + 1).padStart(2, "0")} / ${String(selected.length).padStart(2, "0")}`, `${formatDate(trade.tradeDate)} · ${trade.direction} · ${trade.result.replace("_", " ")}`);
         pdf.setFillColor(...colors.panel); pdf.roundedRect(page.margin, 40, 180, 47, 4, 4, "F");
-        const fields = [["Session", trade.session], ["Level", trade.level || "—"], ["Timeframe", trade.timeframe || "—"], ["Setup", trade.setupQuality || "—"], ["Risk", formatMoney(trade.risk)], ["Reward", formatMoney(trade.reward)], ["R:R", formatRr(trade.risk, trade.reward)], ["P&L", formatMoney(trade.pnl)]];
+        const fields = pdfTradeCardFields(trade);
         fields.forEach(([label, value], fieldIndex) => { const column = fieldIndex % 4; const row = Math.floor(fieldIndex / 4); const x = 22 + column * 44; const y = 53 + row * 18; const valueColor = label === "P&L" ? toNumber(trade.pnl) >= 0 ? colors.green : colors.red : colors.text; pdf.setTextColor(...colors.muted); pdf.setFontSize(7); pdf.text(label, x, y); pdf.setTextColor(valueColor[0], valueColor[1], valueColor[2]); pdf.setFontSize(11); pdf.text(String(value), x, y + 8); });
         pdf.setTextColor(...colors.gold); pdf.setFontSize(8); pdf.text("JOURNAL NOTES", page.margin, 101); pdf.setTextColor(...colors.text); pdf.setFontSize(9); let y = addWrapped(pdf, trade.notes || "No trade notes recorded.", page.margin, 108, 180);
         if (trade.emotionBefore || trade.emotionDuring || trade.emotionAfter) { y += 8; pdf.setTextColor(...colors.gold); pdf.setFontSize(8); pdf.text("EXECUTION EMOTIONS", page.margin, y); y += 7; pdf.setTextColor(...colors.text); pdf.setFontSize(8.5); y = addWrapped(pdf, `Before: ${trade.emotionBefore || "—"}\nDuring: ${trade.emotionDuring || "—"}\nAfter: ${trade.emotionAfter || "—"}`, page.margin, y, 180); }

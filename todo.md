@@ -102,3 +102,6 @@
 - [x] Automatically calculate real-data goal progress from the selected account’s closed trades and surface risk-first goal insights and notifications without placing or modifying trades.
 - [x] Add goal-management and goal-notification regression coverage, then complete full validation for the redesigned workflow.
 - [ ] Retry physical removal of hidden legacy non-custom goal rows when the external TiDB DNS outage has cleared; legacy rows are already excluded from every journal read.
+- [x] Remove journal entry IDs, account IDs, owner IDs, screenshot keys, storage filenames, and internal timestamps from the trade-view dialog and every client-visible trade detail surface.
+- [x] Audit the card-style PDF report and all remaining visible journal interfaces for internal IDs, ownership fields, storage keys, signed URLs, or other implementation metadata, then remove any exposure found.
+- [x] Add privacy-regression coverage and complete validation for the metadata-exposure hardening release.

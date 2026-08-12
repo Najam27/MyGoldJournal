@@ -4,6 +4,7 @@ import { z } from "zod";
 import { accounts, cashMovements, dailyPlans, goals, notificationHistory, notificationSettings, optionLists, skippedTrades, trades } from "../drizzle/schema";
 import { getDb } from "./db";
 import { ensureAccount, getJournal, getOwnedAccount, ownsTrade } from "./goldDb";
+import { toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 import { protectedProcedure, router } from "./_core/trpc";
 import { storageGetSignedUrl, storagePut } from "./storage";
 
@@ -101,7 +102,7 @@ export const goldRouter = router({
       const page = Math.min(input.page, pageCount);
       const rows = await db.select().from(trades).where(where).orderBy(desc(trades.tradeDate), desc(trades.id)).limit(input.pageSize).offset((page - 1) * input.pageSize);
       const hydratedRows = await Promise.all(rows.map(async trade => ({ ...trade, screenshotUrl: trade.screenshotKey ? await storageGetSignedUrl(trade.screenshotKey).catch(() => null) : null })));
-      return { trades: hydratedRows, total, page, pageSize: input.pageSize, pageCount };
+      return { trades: hydratedRows.map(toSafeTrade), total, page, pageSize: input.pageSize, pageCount };
     }),
     create: protectedProcedure.input(tradeInput).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
@@ -193,7 +194,8 @@ export const goldRouter = router({
   optionLists: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const db = await dbOrThrow();
-      return db.select().from(optionLists).where(eq(optionLists.userId, ctx.user.id)).orderBy(optionLists.category, optionLists.value);
+      const rows = await db.select().from(optionLists).where(eq(optionLists.userId, ctx.user.id)).orderBy(optionLists.category, optionLists.value);
+      return rows.map(toSafeJournalRecord);
     }),
     add: protectedProcedure.input(z.object({ category: z.string().trim().min(1).max(80), value: z.string().trim().min(1).max(160) })).mutation(async ({ ctx, input }) => {
       const db = await dbOrThrow();
@@ -211,7 +213,7 @@ export const goldRouter = router({
       const db = await dbOrThrow();
       const [settings] = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, ctx.user.id)).limit(1);
       const history = await db.select().from(notificationHistory).where(eq(notificationHistory.userId, ctx.user.id)).orderBy(desc(notificationHistory.createdAt)).limit(50);
-      return { settings: settings ?? { goalAlerts: true, emailAlerts: false }, history };
+      return { settings: settings ? toSafeJournalRecord(settings) : { goalAlerts: true, emailAlerts: false }, history: history.map(toSafeJournalRecord) };
     }),
     updateSettings: protectedProcedure.input(z.object({ goalAlerts: z.boolean(), emailAlerts: z.boolean() })).mutation(async ({ ctx, input }) => {
       const db = await dbOrThrow();

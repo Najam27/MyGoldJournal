@@ -3,6 +3,7 @@ import { accounts, cashMovements, dailyPlans, goals, skippedTrades, trades } fro
 import { getDb } from "./db";
 import { storageGetSignedUrl } from "./storage";
 import { hydrateSignedScreenshots } from "./journalScreenshots";
+import { toSafeAccount, toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 
 async function requireDb() {
   const db = await getDb();
@@ -41,7 +42,15 @@ export async function getJournal(userId: number, accountId?: number) {
     db.select().from(dailyPlans).where(and(eq(dailyPlans.userId, userId), eq(dailyPlans.accountId, activeAccount.id))).orderBy(desc(dailyPlans.planDate)),
   ]);
   const ownedTrades = await hydrateSignedScreenshots(tradeList, storageGetSignedUrl);
-  return { activeAccount, accounts: accountList, trades: ownedTrades, cashMovements: movementList, goals: goalList, skippedTrades: skippedList, dailyPlans: planList };
+  return {
+    activeAccount: toSafeAccount(activeAccount),
+    accounts: accountList.map(toSafeAccount),
+    trades: ownedTrades.map(toSafeTrade),
+    cashMovements: movementList.map(toSafeJournalRecord),
+    goals: goalList.map(toSafeJournalRecord),
+    skippedTrades: skippedList.map(toSafeJournalRecord),
+    dailyPlans: planList.map(toSafeJournalRecord),
+  };
 }
 
 export async function ownsTrade(userId: number, tradeId: number) {
