@@ -48,6 +48,41 @@ describe("Gold Journal protected server workflows", () => {
     expect(mocks.getDb).not.toHaveBeenCalled();
   });
 
+  it("renames the explicitly selected owned account rather than a fallback account", async () => {
+    const where = vi.fn().mockResolvedValue(undefined);
+    const set = vi.fn(() => ({ where }));
+    const update = vi.fn(() => ({ set }));
+    mocks.getOwnedAccount.mockResolvedValue({ id: 24, userId: 7, name: "Selected account" });
+    mocks.getDb.mockResolvedValue({ update });
+    const caller = goldRouter.createCaller({ user } as any);
+
+    await expect(caller.accounts.rename({ accountId: 24, name: "Renamed selected account" })).resolves.toEqual({ success: true });
+    expect(mocks.getOwnedAccount).toHaveBeenCalledWith(7, 24);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(where).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires explicit confirmation before an account-removal workflow can start", async () => {
+    const caller = goldRouter.createCaller({ user } as any);
+    await expect(caller.accounts.remove({ accountId: 24, confirmed: false } as any)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.getOwnedAccount).not.toHaveBeenCalled();
+  });
+
+  it("chooses a remaining owned account after confirmed removal", async () => {
+    const deleteWhere = vi.fn().mockResolvedValue(undefined);
+    const selectWhere = vi.fn().mockResolvedValue([{ id: 24, userId: 7 }, { id: 25, userId: 7 }]);
+    mocks.getOwnedAccount.mockResolvedValue({ id: 24, userId: 7, name: "Account to remove" });
+    mocks.getDb.mockResolvedValue({
+      select: () => ({ from: () => ({ where: selectWhere }) }),
+      delete: () => ({ where: deleteWhere }),
+    });
+    const caller = goldRouter.createCaller({ user } as any);
+
+    await expect(caller.accounts.remove({ accountId: 24, confirmed: true })).resolves.toEqual({ success: true, replacementAccountId: 25 });
+    expect(mocks.getOwnedAccount).toHaveBeenCalledWith(7, 24);
+    expect(deleteWhere).toHaveBeenCalledTimes(7);
+  });
+
   it("blocks an anonymous trade mutation before ownership validation", async () => {
     const caller = goldRouter.createCaller({ user: null } as any);
     await expect(caller.trades.delete({ tradeId: 11 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });

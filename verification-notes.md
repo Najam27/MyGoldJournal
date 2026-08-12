@@ -6,4 +6,10 @@ The entry screen has therefore been refined to establish an explicit **Gold Jour
 
 Follow-up desktop and 375px mobile captures confirmed that the brand lockup, XAUUSD readout, sign-in control, and legal/privacy cue are readable without overflow. The compact readout correctly transitions from three columns to stacked rows on small screens.
 
+The authorized browser verification reached the secure sign-in provider, where the authentication page requires an email or social sign-in and a human-verification check. No journal records were accessed or changed because authentication cannot proceed autonomously past that control.
+
+During the resumed review, the secure callback exposed a missing `users` table. The required authentication table was restored from the declared schema, and the sign-in action was reissued with user authorization. The next check will confirm whether the repaired callback establishes the private dashboard session.
+
+The repaired sign-in route was relaunched through the visible entry control. The authentication provider is currently loading the secure account page; the next browser check will determine whether an existing signed-in session completes the callback or whether user interaction is still required.
+
 The authenticated dashboard remains the next browser-verification target because preview access initially stopped at the protected entry state. Core server procedures, cloud tables, and client flows are in place for the journal once authenticated.

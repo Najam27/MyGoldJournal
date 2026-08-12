@@ -4,6 +4,8 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { PwaUpdateBanner } from "./components/PwaUpdateBanner";
+import { AccountRenameControl } from "./components/AccountRenameControl";
+import { Mt5AccountImportControl } from "./components/Mt5AccountImportControl";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 
@@ -34,6 +36,8 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <PwaUpdateBanner />
+          <AccountRenameControl />
+          <Mt5AccountImportControl />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

@@ -3,7 +3,7 @@
 - [x] Establish the Gold Journal visual system: dark #10141a palette, gold accents, Inter UI typography, DM Mono data typography, responsive spacing, and accessible motion.
 - [x] Create the Gold Journal application shell: splash screen, desktop sidebar, mobile drawer, mobile bottom navigation, account switcher, sync indicator, and install-app affordance.
 - [x] Model cloud-backed accounts, trades, cash movements, goals, skipped trades, daily plans, option lists, and notifications with ownership enforced in every server query.
-- [ ] Implement secure authenticated account management with a first-account setup flow, account switching, renaming, and creation.
+- [x] Implement secure authenticated account management with a first-account setup flow, account switching, renaming, and creation.
 - [ ] Implement the complete Trade Log: searchable/filterable trade table, stat strip, running balance, per-row actions, pagination-ready queries, and safe destructive confirmation.
 - [ ] Implement New Trade, Edit Trade, View Trade, Deposit, and Withdraw workflows with DD/MM/YYYY dates, PKT session detection, live R:R calculation, validations, and field reset behavior.
 - [ ] Implement private trade screenshot upload, signed viewing URLs, type/size validation, upload progress, and file cleanup on trade deletion.
@@ -21,5 +21,17 @@
 - [x] Add intermediate GTE/LTE percentage assertions to the goal-calculation test suite.
 - [x] Add trade update/delete authorization-boundary tests for anonymous and non-owner access attempts.
 - [x] Model option lists and notification preferences/history in protected cloud-backed workflows.
-- [ ] Add an end-to-end account renaming flow with validation, loading/error handling, and refresh behavior.
+- [x] Add an end-to-end account renaming flow with validation, loading/error handling, and refresh behavior.
+- [x] Wire the rename workflow and tests to the currently selected account after switching.
+- [x] Add client-level selected-account state coverage proving a switch updates the rename target.
 - [ ] Verify responsive desktop/mobile UI, database migrations, authenticated browser flows, PWA assets, test suite, type checks, and production build.
+- [ ] Complete a no-mutation end-to-end review of every authenticated Gold Journal view, key dialog, account-switching flow, and PWA state.
+- [x] Add a clear multi-account manager for creating, switching, renaming, and confirmed removal of trading accounts.
+- [x] Add a safe protected account-removal procedure that prevents accidental deletion and chooses a replacement active account.
+- [x] Expand the MT5 view with an account-import workflow, connection prerequisites, configurable bridge settings, and import-result guidance.
+- [x] Integrate MT5 connection status, persisted bridge configuration, import outcomes, and next-step guidance directly into the MT5 application view.
+- [x] Add MT5 in-view account preparation and target-account selection before importing trades.
+- [x] Add automated coverage for MT5 account preparation, bridge configuration persistence, and success/failure result handling.
+- [x] Add MT5 workflow integration tests for persisted bridge settings, target-account selection, and import outcome feedback.
+- [x] Add a mounted MT5 page test for persisted settings, target selection, and rendered bridge success/failure feedback.
+- [x] Add a mounted MT5 successful-sync test that verifies status, latest-import details, counts, and the target account name.
