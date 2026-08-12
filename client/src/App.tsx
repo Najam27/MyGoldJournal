@@ -5,7 +5,6 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { PwaUpdateBanner } from "./components/PwaUpdateBanner";
 import { AccountRenameControl } from "./components/AccountRenameControl";
-import { Mt5AccountImportControl } from "./components/Mt5AccountImportControl";
 import { NotificationCenter } from "./components/NotificationCenter";
 import { OptionListManager } from "./components/OptionListManager";
 import { BulkPdfExporter } from "./components/BulkPdfExporter";
@@ -40,7 +39,6 @@ function App() {
           <Toaster />
           <PwaUpdateBanner />
           <AccountRenameControl />
-          <Mt5AccountImportControl />
           <NotificationCenter />
           <OptionListManager />
           <BulkPdfExporter />

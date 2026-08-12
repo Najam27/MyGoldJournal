@@ -88,3 +88,5 @@
 - [x] Add or strengthen MT5 connector tests and run complete regression validation.
 - [x] Update MT5 Connect to explain normal connector shutdown and support explicit selection among multiple desktop MT5 terminal accounts.
 - [x] Add multi-account connector regression coverage and validate the updated workflow.
+- [x] Remove all MT5 Connect navigation, UI, local bridge download, import controls, storage, and protected import workflow from Gold Journal.
+- [x] Remove MT5-specific tests and validate the remaining application after the removal.
