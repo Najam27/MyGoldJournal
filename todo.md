@@ -105,3 +105,10 @@
 - [x] Remove journal entry IDs, account IDs, owner IDs, screenshot keys, storage filenames, and internal timestamps from the trade-view dialog and every client-visible trade detail surface.
 - [x] Audit the card-style PDF report and all remaining visible journal interfaces for internal IDs, ownership fields, storage keys, signed URLs, or other implementation metadata, then remove any exposure found.
 - [x] Add privacy-regression coverage and complete validation for the metadata-exposure hardening release.
+- [x] Replace the generic goal editor with strategy-first risk, execution-discipline, and behavior-control templates tailored to a real XAUUSD journal.
+- [x] Add direct configurable controls for max daily loss, max weekly loss/drawdown, loss streak, trade frequency, FOMO, revenge, overtrading, rule violations, and required evidence/review habits.
+- [x] Automatically track the new controls from closed trades, saved mistake tags, screenshots, Plan & Execution reviews, and configurable strategy context without placing or modifying trades.
+- [x] Research and document the risk and behavior-control design basis, then add regression coverage and complete validation for the rebuilt workflow.
+- [x] Replace the single-choice Mistake selector with persisted multi-tag behavior capture so one trade can record FOMO, revenge, moved SL, and other rule breaks together.
+- [x] Preserve, edit, and analyze multiple behavior tags end-to-end through trade create/update flows while remaining compatible with existing single-value mistake records.
+- [x] Add regression coverage proving multiple saved behavior tags flow from trade entry into the strategy-control calculations.
