@@ -59,5 +59,7 @@ export function buildTradingEdge(trades: EdgeTrade[]) {
   const levelTimeframes = edgeRows(trades, ["level", "timeframe"]);
   const all = [...sessions, ...timeframes, ...levels, ...sessionTimeframes, ...levelSessions, ...levelTimeframes];
   const qualified = all.filter(row => row.qualified);
-  return { sessions, timeframes, levels, sessionTimeframes, levelSessions, levelTimeframes, strongest: qualified[0] ?? null, weakest: [...qualified].sort((a, b) => a.expectancy - b.expectancy || a.winRate - b.winRate)[0] ?? null };
+  const strongest = [...qualified].sort((a, b) => b.expectancy - a.expectancy || b.winRate - a.winRate || b.sample - a.sample)[0] ?? null;
+  const weakest = [...qualified].sort((a, b) => a.expectancy - b.expectancy || a.winRate - b.winRate || b.sample - a.sample)[0] ?? null;
+  return { sessions, timeframes, levels, sessionTimeframes, levelSessions, levelTimeframes, strongest, weakest };
 }

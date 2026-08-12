@@ -36,7 +36,7 @@ type TradeForm = { tradeDate: string; session: string; direction: "BUY" | "SELL"
 const navItems: { id: View; label: string; icon: typeof BookOpen }[] = [
   { id: "trades", label: "Trade Log", icon: BookOpen }, { id: "missed", label: "Missed Trades", icon: Target }, { id: "analysis", label: "Analysis", icon: BarChart3 },
   { id: "goals", label: "Goals", icon: Goal }, { id: "calendar", label: "PnL Calendar", icon: CalendarDays }, { id: "plan", label: "Plan & Execution", icon: Check },
-  { id: "mentor", label: "AI Mentor", icon: Bot }, { id: "mt5", label: "MT5 Import", icon: RefreshCcw }, { id: "options", label: "Options", icon: Settings2 },
+  { id: "mentor", label: "AI Mentor", icon: Bot }, { id: "mt5", label: "MT5 Connect", icon: RefreshCcw }, { id: "options", label: "Options", icon: Settings2 },
 ];
 export const JOURNAL_RETRY_EVENT = "gold-journal:retry";
 const OAUTH_RECOVERY_DEADLINE_MS = 3_500;
@@ -167,6 +167,8 @@ function BaseMt5View() {
   const [importHistory, setImportHistory] = useState(() => loadMt5ImportHistory());
   const accountQuery = trpc.journal.get.useQuery({});
   const createAccount = trpc.accounts.create.useMutation();
+  const importMt5Trades = trpc.trades.importMt5.useMutation();
+  const utils = trpc.useUtils();
   const accounts = accountQuery.data?.accounts ?? [];
   const [targetAccountId, setTargetAccountId] = useState<number | undefined>(() => profile.accountId || undefined);
   const [newAccountName, setNewAccountName] = useState("");
@@ -185,8 +187,11 @@ function BaseMt5View() {
       if (!sync) { setStatus("Bridge connected — ready to import."); return; }
       const response = await fetch(`${bridge}/sync`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ days: normalizeMt5Days(days), accountId: targetAccountId ?? profile.accountId ?? null }) });
       const result = await response.json();
-      const outcome = summarizeMt5Outcome({ ok: Boolean(response.ok && result.ok), imported: result.imported, skipped: result.skipped, message: result.message }, selectedAccountName);
       if (!response.ok || !result.ok) throw new Error(result.message || "MT5 import failed.");
+      const bridgeTrades = Array.isArray(result.trades) ? result.trades : [];
+      const importedResult = bridgeTrades.length && targetAccountId ? await importMt5Trades.mutateAsync({ accountId: targetAccountId, trades: bridgeTrades.map((trade: any) => { const rawTime = Number(trade.closeTime ?? trade.time ?? trade.tradeDate); const tradeDate = rawTime > 0 && rawTime < 10_000_000_000 ? rawTime * 1000 : rawTime; return { ticket: String(trade.ticket ?? trade.position ?? trade.id), tradeDate, session: getPktSession(new Date(tradeDate)), direction: String(trade.direction ?? trade.type ?? "BUY").toUpperCase().includes("SELL") ? "SELL" as const : "BUY" as const, pnl: Number(trade.pnl ?? trade.profit ?? 0), symbol: String(trade.symbol ?? "XAUUSD"), volume: Number(trade.volume ?? trade.lots ?? 0), comment: String(trade.comment ?? "") }; }) }) : { imported: Number(result.imported ?? 0), skipped: Number(result.skipped ?? 0) };
+      const outcome = summarizeMt5Outcome({ ok: true, imported: importedResult.imported, skipped: importedResult.skipped, message: result.message || (!bridgeTrades.length ? "Bridge returned counts only. Install the Gold Journal connector to save returned MT5 records into cloud history." : "") }, selectedAccountName);
+      if (bridgeTrades.length) { await utils.journal.get.invalidate(); await utils.trades.list.invalidate(); }
       const entry = { at: new Date().toISOString(), imported: outcome.imported, skipped: outcome.skipped, accountName: outcome.accountName, status: "SUCCESS" as const };
       localStorage.setItem("gj_mt5_last_sync", entry.at);
       localStorage.setItem("gj_mt5_last_result", JSON.stringify(entry));

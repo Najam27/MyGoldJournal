@@ -81,3 +81,8 @@
 - [x] Add combination analysis for session × timeframe, level × session, and level × timeframe so the trader can identify context-specific edges.
 - [x] Present strongest, weakest, and insufficient-sample signals with a minimum-trade threshold and practical data-quality guidance.
 - [x] Add automated analysis-edge tests and run full regression validation after the feature is implemented.
+- [x] Ensure strongest and weakest Analysis Edge callouts rank all qualified single and combined contexts globally, then revalidate the correction.
+- [x] Make MT5 Connect discoverable in the navigation and expose a clear primary connection action.
+- [x] Build a complete in-app MT5 connector workflow with bridge installation, terminal preparation, local endpoint setup, account mapping, test connection, and import controls.
+- [x] Add actionable MT5 diagnostics for unavailable bridge, incorrect local URL, CORS/browser access, invalid payload, account mismatch, and empty history.
+- [x] Add or strengthen MT5 connector tests and run complete regression validation.

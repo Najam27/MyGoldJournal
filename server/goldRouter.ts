@@ -37,6 +37,20 @@ const tradeInput = z.object({
   emotionAfter: optionalText(2000),
 });
 
+const mt5ImportInput = z.object({
+  accountId: z.number().int().positive(),
+  trades: z.array(z.object({
+    ticket: z.string().trim().min(1).max(120),
+    tradeDate: z.number().int().positive(),
+    session: z.string().trim().min(1).max(40),
+    direction: z.enum(["BUY", "SELL"]),
+    pnl: z.number(),
+    symbol: optionalText(60),
+    volume: z.number().nonnegative().optional().default(0),
+    comment: optionalText(500),
+  })).min(1).max(500),
+});
+
 async function dbOrThrow() {
   const db = await getDb();
   if (!db) throw new Error("Cloud database is unavailable. Please retry shortly.");
@@ -115,6 +129,21 @@ export const goldRouter = router({
         notes: input.notes, emotionBefore: input.emotionBefore, emotionDuring: input.emotionDuring, emotionAfter: input.emotionAfter,
       });
       return { id: Number(inserted[0].insertId) };
+    }),
+    importMt5: protectedProcedure.input(mt5ImportInput).mutation(async ({ ctx, input }) => {
+      await getOwnedAccount(ctx.user.id, input.accountId);
+      const db = await dbOrThrow();
+      let imported = 0;
+      let skipped = 0;
+      for (const row of input.trades) {
+        const marker = `[MT5:${row.ticket}]`;
+        const existing = await db.select({ id: trades.id }).from(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId), like(trades.notes, `%${marker}%`))).limit(1);
+        if (existing[0]) { skipped += 1; continue; }
+        const result = row.pnl > 0 ? "WIN" : row.pnl < 0 ? "LOSS" : "BREAK_EVEN";
+        await db.insert(trades).values({ userId: ctx.user.id, accountId: input.accountId, tradeDate: new Date(row.tradeDate), session: row.session, direction: row.direction, result, level: "", timeframe: "", setupQuality: "", executionType: "MT5 Bridge", marketCondition: "", biasAlignment: "", confirmationType: "", slPlacement: "", tpPlacement: "", mistake: "", holdQuality: "", patienceScore: null, risk: null, reward: null, pnl: row.pnl.toFixed(2), notes: `${marker} ${row.symbol || "XAUUSD"} · ${row.volume || 0} lot${row.comment ? ` · ${row.comment}` : ""}`, emotionBefore: "", emotionDuring: "", emotionAfter: "" });
+        imported += 1;
+      }
+      return { imported, skipped };
     }),
     update: protectedProcedure.input(tradeInput.extend({ tradeId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const current = await ownsTrade(ctx.user.id, input.tradeId);

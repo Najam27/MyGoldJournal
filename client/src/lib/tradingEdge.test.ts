@@ -18,4 +18,17 @@ describe("buildTradingEdge", () => {
     expect(edge.sessions.find(row => row.label === "Asian")).toMatchObject({ sample: 1, qualified: false, netPnl: -50 });
     expect(edge.sessionTimeframes.find(row => row.label === "London · 15m")?.qualified).toBe(true);
   });
+
+  it("ranks the strongest qualified context across both single and combined dimensions", () => {
+    const edge = buildTradingEdge([
+      ...trades,
+      { session: "New York", timeframe: "5m", level: "FIB", result: "WIN", pnl: 300 },
+      { session: "New York", timeframe: "5m", level: "FIB", result: "WIN", pnl: 200 },
+      { session: "New York", timeframe: "5m", level: "FIB", result: "WIN", pnl: 220 },
+      { session: "New York", timeframe: "5m", level: "FIB", result: "WIN", pnl: 180 },
+      { session: "New York", timeframe: "5m", level: "FIB", result: "WIN", pnl: 210 },
+    ]);
+    expect(edge.strongest?.label).toBe("New York");
+    expect(edge.strongest?.expectancy).toBe(222);
+  });
 });
