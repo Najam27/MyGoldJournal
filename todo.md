@@ -69,3 +69,8 @@
 - [ ] Retry the final checkpoint after the temporary artifact-host DNS outage clears so the validated project state can be preserved and published.
 - [x] Prevent unavailable screenshot-signing requests from delaying the protected journal loader and its authenticated review screens.
 - [x] Replace the protected journal’s indefinite loading state with an explicit session-recovery state when account data cannot load.
+- [x] Replace the delayed protected-loader page reload with an in-place journal and trade-list retry path that preserves UI state.
+- [x] Add explicit user-facing OAuth outage handling on the login entry path, with a clear recoverable state for temporary authentication-service failures.
+- [x] Add the same OAuth-aware recoverable handling to the protected-session reconnect action.
+- [x] Verify the reliability-boundary documentation was persisted before marking that documentation work complete.
+- [x] Run the full regression suite, type check, production build, and service-worker syntax validation after the reliability updates.

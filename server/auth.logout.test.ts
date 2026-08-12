@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { COOKIE_NAME } from "../shared/const";
 import type { TrpcContext } from "./_core/context";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 type CookieCall = {
   name: string;
@@ -58,5 +59,16 @@ describe("auth.logout", () => {
       httpOnly: true,
       path: "/",
     });
+  });
+});
+
+describe("auth.oauthStatus", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("reports an unavailable OAuth service without exposing provider errors", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("DNS lookup failed")));
+    const { ctx } = createAuthContext();
+
+    await expect(appRouter.createCaller(ctx).auth.oauthStatus()).resolves.toEqual({ available: false });
   });
 });
