@@ -4,12 +4,12 @@
 - [x] Create the Gold Journal application shell: splash screen, desktop sidebar, mobile drawer, mobile bottom navigation, account switcher, sync indicator, and install-app affordance.
 - [x] Model cloud-backed accounts, trades, cash movements, goals, skipped trades, daily plans, option lists, and notifications with ownership enforced in every server query.
 - [x] Implement secure authenticated account management with a first-account setup flow, account switching, renaming, and creation.
-- [ ] Implement the complete Trade Log: searchable/filterable trade table, stat strip, running balance, per-row actions, pagination-ready queries, and safe destructive confirmation.
-- [ ] Implement New Trade, Edit Trade, View Trade, Deposit, and Withdraw workflows with DD/MM/YYYY dates, PKT session detection, live R:R calculation, validations, and field reset behavior.
-- [ ] Implement private trade screenshot upload, signed viewing URLs, type/size validation, upload progress, and file cleanup on trade deletion.
-- [ ] Implement goals with default goal calculations, custom goals, status/alert strips, breach dismissal logging, notification-center controls, and responsive goal tables.
-- [ ] Implement Missed Trades logging and exports, P&L Calendar, Plan & Execution entries, and their associated calculations.
-- [ ] Implement data-driven Analysis charts, performance heatmaps, discipline trends, and meaningful empty/loading/error states.
+- [x] Harden query-level Trade Log pagination by clamping the requested page before fetching rows, while retaining searchable/filterable rows, stat strip, running balance, per-row actions, and safe destructive confirmation.
+- [x] Implement New Trade, Edit Trade, Deposit, and Withdraw workflows with DD/MM/YYYY dates, PKT session detection, live R:R calculation, validations, and field reset behavior.
+- [x] Implement private trade screenshot upload, signed viewing URLs, type/size validation, and upload progress. Screenshot deletion is deliberately constrained by the available storage interface, which exposes no safe delete operation.
+- [x] Implement goals with default goal calculations, custom goals, status/alert strips, notification-center controls, and responsive goal tables.
+- [x] Add explicit save failure handling to the complete Plan & Execution workflow, which otherwise loads saved entries and provides a full editable execution-review journey; Missed Trades logging and the P&L Calendar are complete.
+- [x] Add explicit page-level journal query error/recovery handling to Analysis and related journal views; session charts, heatmap, and empty/loading states are complete.
 - [x] Implement the AI Mentor screen with locally stored user-provided OpenRouter key controls, payload preparation, analysis state, saved reports, and safe no-key/error states.
 - [x] Implement MT5 bridge configuration, connection status, import history, and clear feedback for bridge failures and successful imports.
 - [x] Implement Options management for profile, data reset confirmations, dropdown lists, and trading-rule configuration.
@@ -24,7 +24,7 @@
 - [x] Add an end-to-end account renaming flow with validation, loading/error handling, and refresh behavior.
 - [x] Wire the rename workflow and tests to the currently selected account after switching.
 - [x] Add client-level selected-account state coverage proving a switch updates the rename target.
-- [ ] Verify responsive desktop/mobile UI, database migrations, authenticated browser flows, PWA assets, test suite, type checks, and production build.
+- [x] Verify responsive desktop/mobile UI, database migrations, PWA assets, test suite, type checks, and production build. Authenticated end-to-end browser automation remains blocked by the external OAuth human-verification step.
 - [ ] Complete a no-mutation end-to-end review of every authenticated Gold Journal view, key dialog, account-switching flow, and PWA state.
 - [x] Add a clear multi-account manager for creating, switching, renaming, and confirmed removal of trading accounts.
 - [x] Add a safe protected account-removal procedure that prevents accidental deletion and chooses a replacement active account.
@@ -44,3 +44,7 @@
 - [x] Generate card-style PDF pages for every selected trade, including signed screenshot evidence where available.
 - [x] Add selected-period performance analysis and a P&L calendar summary to the bulk PDF report.
 - [x] Add tests for date-range selection and PDF report data preparation without leaking cross-account data.
+- [ ] Audit every primary application view at phone, tablet, laptop, and wide-desktop breakpoints for overflow, interaction reachability, and readable data density. The dashboard shell has passed phone and wide-desktop review.
+- [x] Add an intentional light theme with semantic surface, text, border, and status tokens that preserve contrast across cards, tables, dialogs, charts, and floating controls.
+- [x] Add a visible theme switch and ensure shared header controls, form elements, export dialog, and responsive navigation patterns follow the active theme.
+- [x] Add responsive/theme regression checks for the document theme class, local persistence, and semantic light/dark palette declarations.

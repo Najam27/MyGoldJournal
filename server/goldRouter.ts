@@ -1,12 +1,11 @@
-import { and, eq } from "drizzle-orm";
-import { desc } from "drizzle-orm";
+import { and, count, desc, eq, like, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { accounts, cashMovements, dailyPlans, goals, notificationHistory, notificationSettings, optionLists, skippedTrades, trades } from "../drizzle/schema";
 import { getDb } from "./db";
 import { ensureAccount, getJournal, getOwnedAccount, ownsTrade } from "./goldDb";
 import { protectedProcedure, router } from "./_core/trpc";
-import { storagePut } from "./storage";
+import { storageGetSignedUrl, storagePut } from "./storage";
 
 const optionalText = (max = 5000) => z.string().trim().max(max).optional().default("");
 const accountIdInput = z.object({ accountId: z.number().int().positive() });
@@ -86,6 +85,23 @@ export const goldRouter = router({
     }),
   }),
   trades: router({
+    list: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(50).default(12), search: z.string().trim().max(160).optional().default(""), result: z.enum(["WIN", "LOSS", "BREAK_EVEN", "OPEN"]).optional() })).query(async ({ ctx, input }) => {
+      const account = await getOwnedAccount(ctx.user.id, input.accountId);
+      const db = await dbOrThrow();
+      let where = and(eq(trades.userId, ctx.user.id), eq(trades.accountId, account.id));
+      if (input.result) where = and(where, eq(trades.result, input.result));
+      if (input.search) {
+        const needle = `%${input.search}%`;
+        where = and(where, or(like(trades.session, needle), like(trades.level, needle), like(trades.notes, needle)));
+      }
+      const totalRows = await db.select({ total: count() }).from(trades).where(where);
+      const total = Number(totalRows[0]?.total ?? 0);
+      const pageCount = Math.max(1, Math.ceil(total / input.pageSize));
+      const page = Math.min(input.page, pageCount);
+      const rows = await db.select().from(trades).where(where).orderBy(desc(trades.tradeDate), desc(trades.id)).limit(input.pageSize).offset((page - 1) * input.pageSize);
+      const hydratedRows = await Promise.all(rows.map(async trade => ({ ...trade, screenshotUrl: trade.screenshotKey ? await storageGetSignedUrl(trade.screenshotKey).catch(() => null) : null })));
+      return { trades: hydratedRows, total, page, pageSize: input.pageSize, pageCount };
+    }),
     create: protectedProcedure.input(tradeInput).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();

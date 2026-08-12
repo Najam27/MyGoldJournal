@@ -35,4 +35,10 @@ describe("Gold Journal trading primitives", () => {
     const caller = goldRouter.createCaller({ user: { id: 7 } } as any);
     await expect(caller.trades.create({ accountId: 0 } as any)).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
+
+  it("rejects invalid server-pagination bounds before reading an account", async () => {
+    const caller = goldRouter.createCaller({ user: { id: 7 } } as any);
+    await expect(caller.trades.list({ accountId: 7, page: 0, pageSize: 12 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(caller.trades.list({ accountId: 7, page: 1, pageSize: 51 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
 });

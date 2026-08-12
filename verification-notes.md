@@ -18,4 +18,6 @@ After adding notification and rules-list controls, the 375px mobile viewport was
 
 Recent development-server and browser-console logs were inspected after the workflow enhancements. The current entries show normal hot-module updates and client reconnections; no new application runtime error was recorded after the recent changes.
 
+The theme-control layout was reviewed at desktop and 375px phone widths after the responsive refactor. Desktop header actions no longer collide with the theme affordance. At phone width, the header remains readable with menu, brand, notification, and primary-add controls, while metric cards collapse to a single readable column and the fixed bottom navigation remains reachable above the safe-area edge.
+
 The authenticated dashboard remains the next browser-verification target because preview access initially stopped at the protected entry state. Core server procedures, cloud tables, and client flows are in place for the journal once authenticated.
