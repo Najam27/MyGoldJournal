@@ -8,6 +8,7 @@ import { AccountRenameControl } from "./components/AccountRenameControl";
 import { Mt5AccountImportControl } from "./components/Mt5AccountImportControl";
 import { NotificationCenter } from "./components/NotificationCenter";
 import { OptionListManager } from "./components/OptionListManager";
+import { BulkPdfExporter } from "./components/BulkPdfExporter";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 
@@ -42,6 +43,7 @@ function App() {
           <Mt5AccountImportControl />
           <NotificationCenter />
           <OptionListManager />
+          <BulkPdfExporter />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

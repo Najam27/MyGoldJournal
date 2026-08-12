@@ -40,3 +40,7 @@
 - [x] Integrate protected dropdown-list and trading-rule controls directly into the Options page and replace static list pills.
 - [x] Add mounted Options-page coverage for profile display, confirmed reset controls, and in-page rule configuration.
 - [x] Add Options reset confirmation coverage proving clearing proceeds only after explicit confirmation.
+- [x] Add a bulk PDF export dialog supporting a custom from/to date range or the full active-account trade log.
+- [x] Generate card-style PDF pages for every selected trade, including signed screenshot evidence where available.
+- [x] Add selected-period performance analysis and a P&L calendar summary to the bulk PDF report.
+- [x] Add tests for date-range selection and PDF report data preparation without leaking cross-account data.
