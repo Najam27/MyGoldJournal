@@ -12,7 +12,8 @@ afterEach(() => cleanup());
 describe("PnlCalendarWithWeeks", () => {
   it("renders a weekly P&L total after the calendar days", () => {
     render(<PnlCalendarWithWeeks trades={[{ tradeDate: new Date("2026-08-03T12:00:00"), pnl: "100" }, { tradeDate: new Date("2026-08-06T12:00:00"), pnl: "-20" }]} />);
-    expect(screen.getAllByText(/Week ending/).length).toBeGreaterThan(0);
-    expect(screen.getByText("$80.00")).toBeTruthy();
+    expect(screen.getAllByText(/ending/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("$80.00").length).toBeGreaterThan(1);
+    expect(screen.getByRole("button", { name: /03\/08\/2026: \$100\.00, 1 trades/i }).className).toContain("gain");
   });
 });

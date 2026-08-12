@@ -57,3 +57,6 @@
 - [x] Complete New Trade fields from the supplied reference, including direction versus bias, SL/TP placement, mistake, hold quality, and structured screenshot/notes/emotion inputs.
 - [x] Add a weekly P&L summary at the end of each week in the P&L Calendar.
 - [x] Add a searchable month picker to the monthly trading overview above the Trade Log controls, retaining trade, win/loss, win-rate, P&L, and risk/reward metrics.
+- [x] Redesign the P&L Calendar as a week-card layout with a dedicated weekly summary card beside each calendar week.
+- [x] Add an accessible hover and focus interaction that lifts populated day cards and centers their P&L and trade summary with restrained motion.
+- [x] Move the searchable monthly performance overview from the Trade Log to the top of the P&L Calendar.
