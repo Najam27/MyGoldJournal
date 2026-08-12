@@ -12,7 +12,7 @@
 - [ ] Implement data-driven Analysis charts, performance heatmaps, discipline trends, and meaningful empty/loading/error states.
 - [x] Implement the AI Mentor screen with locally stored user-provided OpenRouter key controls, payload preparation, analysis state, saved reports, and safe no-key/error states.
 - [x] Implement MT5 bridge configuration, connection status, import history, and clear feedback for bridge failures and successful imports.
-- [ ] Implement Options management for profile, data reset confirmations, dropdown lists, and trading-rule configuration.
+- [x] Implement Options management for profile, data reset confirmations, dropdown lists, and trading-rule configuration.
 - [x] Add installable PWA configuration: manifest, service worker that caches static assets only, update banner, offline banner, Android/desktop install prompt, and iOS guidance.
 - [x] Restrict the service worker to caching true static assets only, excluding HTML documents, APIs, and private storage paths.
 - [x] Add automated tests for formatting, risk/reward calculation, session detection, goal calculation primitives, and core protected server workflows.
@@ -37,3 +37,6 @@
 - [x] Add a mounted MT5 successful-sync test that verifies status, latest-import details, counts, and the target account name.
 - [x] Add a persistent MT5 import-run history with timestamp, target account, imported/skipped counts, and status, then render it in the MT5 view.
 - [x] Add mounted MT5 view coverage for rendering past import runs.
+- [x] Integrate protected dropdown-list and trading-rule controls directly into the Options page and replace static list pills.
+- [x] Add mounted Options-page coverage for profile display, confirmed reset controls, and in-page rule configuration.
+- [x] Add Options reset confirmation coverage proving clearing proceeds only after explicit confirmation.
