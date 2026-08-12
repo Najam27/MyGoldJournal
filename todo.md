@@ -77,3 +77,7 @@
 - [x] Add and test a server-side OAuth provider probe deadline that returns an unavailable result when the underlying fetch never settles.
 - [x] Add a client-visible OAuth recovery deadline so login and protected-session reconnect controls become recoverable even if their health request remains pending.
 - [x] Run the full regression suite, type check, production build, and service-worker syntax validation after the final client-side OAuth recovery-deadline change.
+- [x] Build an account-scoped Analysis Edge feature showing win rate, net P&L, expectancy, and sample size by session, timeframe, and level.
+- [x] Add combination analysis for session × timeframe, level × session, and level × timeframe so the trader can identify context-specific edges.
+- [x] Present strongest, weakest, and insufficient-sample signals with a minimum-trade threshold and practical data-quality guidance.
+- [x] Add automated analysis-edge tests and run full regression validation after the feature is implemented.
