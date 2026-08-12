@@ -67,3 +67,4 @@
 - [ ] Execute and document the remaining phone, tablet, laptop, and wide-desktop audit for all primary journal views once the authenticated session is available.
 - [ ] Execute and document the remaining authenticated dark/light contrast audit across forms, cards, dialogs, tables, and navigation once the authenticated session is available.
 - [ ] Retry the final checkpoint after the temporary artifact-host DNS outage clears so the validated project state can be preserved and published.
+- [x] Prevent unavailable screenshot-signing requests from delaying the protected journal loader and its authenticated review screens.

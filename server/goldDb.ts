@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { accounts, cashMovements, dailyPlans, goals, skippedTrades, trades } from "../drizzle/schema";
 import { getDb } from "./db";
 import { storageGetSignedUrl } from "./storage";
+import { hydrateSignedScreenshots } from "./journalScreenshots";
 
 const defaultGoals = [
   ["Max Trades Per Day", "Keep selectivity intact", "DAILY", "trade_count", "LTE", "3"],
@@ -67,10 +68,7 @@ export async function getJournal(userId: number, accountId?: number) {
     db.select().from(skippedTrades).where(and(eq(skippedTrades.userId, userId), eq(skippedTrades.accountId, activeAccount.id))).orderBy(desc(skippedTrades.tradeDate)),
     db.select().from(dailyPlans).where(and(eq(dailyPlans.userId, userId), eq(dailyPlans.accountId, activeAccount.id))).orderBy(desc(dailyPlans.planDate)),
   ]);
-  const ownedTrades = await Promise.all(tradeList.map(async trade => ({
-    ...trade,
-    screenshotUrl: trade.screenshotKey ? await storageGetSignedUrl(trade.screenshotKey).catch(() => null) : null,
-  })));
+  const ownedTrades = await hydrateSignedScreenshots(tradeList, storageGetSignedUrl);
   return { activeAccount, accounts: accountList, trades: ownedTrades, cashMovements: movementList, goals: goalList, skippedTrades: skippedList, dailyPlans: planList };
 }
 
