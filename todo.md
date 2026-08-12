@@ -1,0 +1,25 @@
+# Project TODO
+
+- [x] Establish the Gold Journal visual system: dark #10141a palette, gold accents, Inter UI typography, DM Mono data typography, responsive spacing, and accessible motion.
+- [x] Create the Gold Journal application shell: splash screen, desktop sidebar, mobile drawer, mobile bottom navigation, account switcher, sync indicator, and install-app affordance.
+- [x] Model cloud-backed accounts, trades, cash movements, goals, skipped trades, daily plans, option lists, and notifications with ownership enforced in every server query.
+- [ ] Implement secure authenticated account management with a first-account setup flow, account switching, renaming, and creation.
+- [ ] Implement the complete Trade Log: searchable/filterable trade table, stat strip, running balance, per-row actions, pagination-ready queries, and safe destructive confirmation.
+- [ ] Implement New Trade, Edit Trade, View Trade, Deposit, and Withdraw workflows with DD/MM/YYYY dates, PKT session detection, live R:R calculation, validations, and field reset behavior.
+- [ ] Implement private trade screenshot upload, signed viewing URLs, type/size validation, upload progress, and file cleanup on trade deletion.
+- [ ] Implement goals with default goal calculations, custom goals, status/alert strips, breach dismissal logging, notification-center controls, and responsive goal tables.
+- [ ] Implement Missed Trades logging and exports, P&L Calendar, Plan & Execution entries, and their associated calculations.
+- [ ] Implement data-driven Analysis charts, performance heatmaps, discipline trends, and meaningful empty/loading/error states.
+- [x] Implement the AI Mentor screen with locally stored user-provided OpenRouter key controls, payload preparation, analysis state, saved reports, and safe no-key/error states.
+- [ ] Implement MT5 bridge configuration, connection status, import history, and clear feedback for bridge failures and successful imports.
+- [ ] Implement Options management for profile, data reset confirmations, dropdown lists, and trading-rule configuration.
+- [x] Add installable PWA configuration: manifest, service worker that caches static assets only, update banner, offline banner, Android/desktop install prompt, and iOS guidance.
+- [x] Restrict the service worker to caching true static assets only, excluding HTML documents, APIs, and private storage paths.
+- [x] Add automated tests for formatting, risk/reward calculation, session detection, goal calculation primitives, and core protected server workflows.
+- [x] Add automated goal-calculation tests covering GTE/LTE status transitions, percentage logic, and no-activity pending state.
+- [x] Add protected workflow tests for Gold Journal account ownership, bootstrap behavior, and trade mutation authorization boundaries.
+- [x] Add intermediate GTE/LTE percentage assertions to the goal-calculation test suite.
+- [x] Add trade update/delete authorization-boundary tests for anonymous and non-owner access attempts.
+- [x] Model option lists and notification preferences/history in protected cloud-backed workflows.
+- [ ] Add an end-to-end account renaming flow with validation, loading/error handling, and refresh behavior.
+- [ ] Verify responsive desktop/mobile UI, database migrations, authenticated browser flows, PWA assets, test suite, type checks, and production build.

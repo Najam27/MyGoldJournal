@@ -1,0 +1,24 @@
+.login-screen::before {
+  content: "";
+  position: absolute;
+  inset: 11% 8%;
+  border: 1px solid rgba(233, 182, 75, .06);
+  background-image: linear-gradient(rgba(233, 182, 75, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(233, 182, 75, .035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse at center, black 10%, transparent 70%);
+  pointer-events: none;
+}
+
+.login-card { border-top-color: rgba(233, 182, 75, .34); }
+.login-lockup { display: flex; align-items: center; gap: 12px; margin-bottom: 21px; }
+.login-lockup > div { display: grid; gap: 2px; }
+.login-lockup span { color: #b99546; font: 700 9px "DM Mono", monospace; letter-spacing: .14em; }
+.login-lockup strong { color: #f2f5f7; font-size: 18px; letter-spacing: -.045em; }
+.login-card > .eyebrow { display: block; margin-bottom: 7px; }
+.instrument-readout { display: grid; grid-template-columns: 1.2fr 1fr 1.3fr; gap: 1px; margin: 0 0 22px; border: 1px solid #35414c; border-radius: 8px; overflow: hidden; background: #10161c; }
+.instrument-readout span { display: block; padding: 8px 9px; border-right: 1px solid #303b46; color: #aab4be; font-size: 9px; letter-spacing: .05em; white-space: nowrap; }
+.instrument-readout span:first-child { color: #f0c96e; font: 700 10px "DM Mono", monospace; }
+.instrument-readout span:last-child { border-right: 0; }
+.pwa-update-banner { position: fixed; z-index: 200; right: 18px; bottom: 18px; display: flex; align-items: center; gap: 9px; padding: 9px 9px 9px 12px; border: 1px solid #68562d; border-radius: 10px; background: #1b222a; box-shadow: 0 18px 45px rgba(0,0,0,.35); color: #e6edf3; font-size: 11px; }
+.pwa-update-banner > svg { color: #edc66a; }.pwa-update-banner .button { min-height: 29px; font-size: 10px; }.pwa-update-banner > button { display: grid; place-items: center; border: 0; background: transparent; color: #92a0ab; }
+@media (max-width: 760px) { .instrument-readout { grid-template-columns: 1fr; }.instrument-readout span { border-right: 0; border-bottom: 1px solid #303b46; }.instrument-readout span:last-child { border-bottom: 0; } }
