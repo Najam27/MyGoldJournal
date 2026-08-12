@@ -18,7 +18,7 @@ describe("TradeLogWithViewer", () => {
     fireEvent.click(screen.getByLabelText(/View trade from/i));
     expect(screen.getByText("Trade card")).toBeTruthy();
     expect(screen.getByText("Waited for confirmation")).toBeTruthy();
-    expect(screen.getByText("Aligned")).toBeTruthy();
+    expect(screen.getAllByText("Aligned").length).toBeGreaterThan(1);
     expect(screen.getByText("Below swing")).toBeTruthy();
     expect(screen.getByText("Good")).toBeTruthy();
     expect(screen.getByText("gold-journal/21/trades/8.png")).toBeTruthy();

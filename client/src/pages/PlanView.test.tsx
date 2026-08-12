@@ -18,22 +18,24 @@ describe("PlanExecutionEditor", () => {
 
   it("loads a saved daily entry and writes its complete execution review on update", async () => {
     const today = new Date();
-    const saved = { id: 7, planDate: today, preBias: "Bullish", keyLevels: "London high", sessionFocus: ["London"], planNotes: "Wait for sweep", rulesPlanned: [{ id: "0", text: "Maximum 3 trades today. Stop after 3.", checked: true }], emotionStart: "Calm|Focused", emotionEnd: "Disciplined", executionScore: 4, rulesFollowed: [{ id: "0", yes: true }], whatWentWell: "Patience", whatWentWrong: "Late entry", lessons: "Wait for close", overallRating: 4 };
+    const saved = { id: 7, planDate: today, preBias: "Bullish", marketContext: "Asia range compressed", keyLevels: "London high", sessionFocus: ["London"], eventRisk: "CPI at 13:30", longScenario: "Accept above London high", shortScenario: "Reject London high", noTradeCondition: "No clear displacement", invalidationLevel: "Close below Asia low", riskLimit: "150", maxTrades: 3, sizingPlan: "0.5R per A setup", planNotes: "Wait for sweep", rulesPlanned: [{ id: "0", text: "Market event risk checked before entry", checked: true }], emotionStart: "Calm|Focused", emotionEnd: "Disciplined", executionScore: 4, rulesFollowed: [{ id: "0", yes: true }], whatWentWell: "Patience", whatWentWrong: "Late entry", executionNotes: "Waited for confirmation", planDeviation: "None", lessons: "Wait for close", tomorrowFocus: "Trade London only", overallRating: 4 };
     const onSaved = vi.fn().mockResolvedValue(undefined);
     render(<PlanExecutionEditor account={{ id: 3 }} plans={[saved]} onSaved={onSaved} />);
-    expect(screen.getByText("SAVED ENTRY")).toBeTruthy();
+    expect(screen.getByText("SAVED SESSION RECORD")).toBeTruthy();
     expect(screen.getByDisplayValue("London high")).toBeTruthy();
+    expect(screen.getByDisplayValue("Asia range compressed")).toBeTruthy();
+    expect(screen.getByDisplayValue("0.5R per A setup")).toBeTruthy();
     expect(screen.getByDisplayValue("Patience")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Update entry" }));
-    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ accountId: 3, preBias: "Bullish", keyLevels: "London high", executionScore: 4, overallRating: 4, whatWentWell: "Patience", lessons: "Wait for close" })));
+    fireEvent.click(screen.getByRole("button", { name: "Update protocol" }));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ accountId: 3, preBias: "Bullish", marketContext: "Asia range compressed", keyLevels: "London high", riskLimit: "150", maxTrades: 3, executionScore: 4, overallRating: 4, whatWentWell: "Patience", lessons: "Wait for close", tomorrowFocus: "Trade London only" })));
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
   });
 
   it("keeps the entry visible and reports a save failure for retry", async () => {
     mocks.save.mockRejectedValueOnce(new Error("Cloud connection interrupted"));
     render(<PlanExecutionEditor account={{ id: 3 }} plans={[]} onSaved={vi.fn()} />);
-    fireEvent.change(screen.getByPlaceholderText("Write your game plan before the session begins…"), { target: { value: "Wait for confirmation" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save entry" }));
+    fireEvent.change(screen.getByPlaceholderText("The one execution priority that matters today."), { target: { value: "Wait for confirmation" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save protocol" }));
     await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("Cloud connection interrupted"));
     expect(screen.getByDisplayValue("Wait for confirmation")).toBeTruthy();
   });

@@ -60,3 +60,10 @@
 - [x] Redesign the P&L Calendar as a week-card layout with a dedicated weekly summary card beside each calendar week.
 - [x] Add an accessible hover and focus interaction that lifts populated day cards and centers their P&L and trade summary with restrained motion.
 - [x] Move the searchable monthly performance overview from the Trade Log to the top of the P&L Calendar.
+- [x] Complete the Trade Log visible context with direction-versus-bias and the remaining saved execution fields, preserving readable responsive columns and the full trade card.
+- [x] Diagnose and repair Goals calculation, period activity, status, and control behavior against account-scoped real trade data.
+- [x] Redesign Plan & Execution around a professional trader’s pre-market context, trade thesis, risk limits, execution review, and end-of-session scorecard.
+- [ ] Execute and document the remaining protected no-mutation view-by-view review once the authenticated session is available.
+- [ ] Execute and document the remaining phone, tablet, laptop, and wide-desktop audit for all primary journal views once the authenticated session is available.
+- [ ] Execute and document the remaining authenticated dark/light contrast audit across forms, cards, dialogs, tables, and navigation once the authenticated session is available.
+- [ ] Retry the final checkpoint after the temporary artifact-host DNS outage clears so the validated project state can be preserved and published.
