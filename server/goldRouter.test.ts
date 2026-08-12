@@ -22,6 +22,7 @@ import { goldRouter } from "./goldRouter";
 
 const user = { id: 7, openId: "journal-owner", role: "user" };
 const validTrade = { accountId: 12, tradeDate: Date.now(), session: "London", direction: "BUY", result: "WIN", patienceScore: null, risk: null, reward: null, pnl: 0 };
+const limitedRows = (rows: unknown[]) => ({ from: () => ({ where: () => ({ limit: vi.fn().mockResolvedValue(rows) }) }) });
 
 describe("Gold Journal protected server workflows", () => {
   beforeEach(() => {
@@ -94,5 +95,38 @@ describe("Gold Journal protected server workflows", () => {
     const caller = goldRouter.createCaller({ user } as any);
     await expect(caller.trades.update({ ...validTrade, tradeId: 11 })).rejects.toThrow("unavailable");
     expect(mocks.getDb).not.toHaveBeenCalled();
+  });
+
+  it("records a new account-scoped goal alert once and deduplicates its type plus cycle key", async () => {
+    const values = vi.fn().mockResolvedValue(undefined);
+    const select = vi.fn()
+      .mockImplementationOnce(() => limitedRows([]))
+      .mockImplementationOnce(() => limitedRows([{ id: 88, userId: 7, accountId: 12, active: true, notify: true }]))
+      .mockImplementationOnce(() => limitedRows([]));
+    mocks.getOwnedAccount.mockResolvedValue({ id: 12, userId: 7 });
+    mocks.getDb.mockResolvedValue({ select, insert: () => ({ values }) });
+    const caller = goldRouter.createCaller({ user } as any);
+
+    await expect(caller.notifications.recordGoalAlerts({ accountId: 12, alerts: [{ goalId: 88, status: "AT_RISK", cycleKey: "DAILY-2026-08-12", message: "Loss ceiling is near." }] })).resolves.toEqual({ recorded: 1 });
+    expect(values).toHaveBeenCalledWith(expect.objectContaining({ userId: 7, accountId: 12, type: "GOAL_AT_RISK_88_DAILY-2026-08-12" }));
+
+    select.mockClear();
+    select.mockImplementationOnce(() => limitedRows([])).mockImplementationOnce(() => limitedRows([{ id: 88, userId: 7, accountId: 12, active: true, notify: true }])).mockImplementationOnce(() => limitedRows([{ id: 901 }]));
+    await expect(caller.notifications.recordGoalAlerts({ accountId: 12, alerts: [{ goalId: 88, status: "AT_RISK", cycleKey: "DAILY-2026-08-12", message: "Loss ceiling is near." }] })).resolves.toEqual({ recorded: 0 });
+    expect(values).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips goal alerts for inactive or notification-disabled rules", async () => {
+    const values = vi.fn().mockResolvedValue(undefined);
+    const select = vi.fn()
+      .mockImplementationOnce(() => limitedRows([]))
+      .mockImplementationOnce(() => limitedRows([{ id: 89, userId: 7, accountId: 12, active: false, notify: true }]))
+      .mockImplementationOnce(() => limitedRows([{ id: 90, userId: 7, accountId: 12, active: true, notify: false }]));
+    mocks.getOwnedAccount.mockResolvedValue({ id: 12, userId: 7 });
+    mocks.getDb.mockResolvedValue({ select, insert: () => ({ values }) });
+    const caller = goldRouter.createCaller({ user } as any);
+
+    await expect(caller.notifications.recordGoalAlerts({ accountId: 12, alerts: [{ goalId: 89, status: "BREACHED", cycleKey: "DAILY-2026-08-12", message: "Inactive ceiling breached." }, { goalId: 90, status: "MET", cycleKey: "DAILY-2026-08-12", message: "Silent target achieved." }] })).resolves.toEqual({ recorded: 0 });
+    expect(values).not.toHaveBeenCalled();
   });
 });

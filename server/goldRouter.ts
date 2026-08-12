@@ -9,6 +9,7 @@ import { storageGetSignedUrl, storagePut } from "./storage";
 
 const optionalText = (max = 5000) => z.string().trim().max(max).optional().default("");
 const accountIdInput = z.object({ accountId: z.number().int().positive() });
+const goalInput = z.object({ accountId: z.number().int().positive(), name: z.string().trim().min(1).max(120), description: optionalText(500), period: z.enum(["DAILY", "WEEKLY", "MONTHLY"]), metric: z.string().trim().min(1).max(80), comparison: z.enum(["GTE", "LTE"]), target: z.number().min(0), notify: z.boolean().default(true), active: z.boolean().default(true) });
 
 const tradeInput = z.object({
   accountId: z.number().int().positive(),
@@ -162,23 +163,30 @@ export const goldRouter = router({
     }),
   }),
   goals: router({
-    create: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), name: z.string().trim().min(1).max(120), description: optionalText(500), period: z.enum(["DAILY", "WEEKLY", "MONTHLY"]), metric: z.string().trim().min(1).max(80), comparison: z.enum(["GTE", "LTE"]), target: z.number().min(0), notify: z.boolean().default(true) })).mutation(async ({ ctx, input }) => {
+    create: protectedProcedure.input(goalInput).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
-      await db.insert(goals).values({ ...input, userId: ctx.user.id, target: input.target.toFixed(2), isCustom: true });
-      return { success: true };
+      const inserted = await db.insert(goals).values({ ...input, userId: ctx.user.id, target: input.target.toFixed(2), isCustom: true });
+      return { success: true, id: Number(inserted[0].insertId) };
     }),
-    update: protectedProcedure.input(z.object({ goalId: z.number().int().positive(), target: z.number().min(0), notify: z.boolean(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
-      await ownGoal(ctx.user.id, input.goalId);
+    update: protectedProcedure.input(goalInput.extend({ goalId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const existing = await ownGoal(ctx.user.id, input.goalId);
+      await getOwnedAccount(ctx.user.id, input.accountId);
+      if (existing.accountId !== input.accountId) throw new Error("Goals cannot be moved between accounts. Create the goal in the destination account instead.");
       const db = await dbOrThrow();
-      await db.update(goals).set({ target: input.target.toFixed(2), notify: input.notify, active: input.active }).where(and(eq(goals.id, input.goalId), eq(goals.userId, ctx.user.id)));
+      await db.update(goals).set({ name: input.name, description: input.description, period: input.period, metric: input.metric, comparison: input.comparison, target: input.target.toFixed(2), notify: input.notify, active: input.active, isCustom: true }).where(and(eq(goals.id, input.goalId), eq(goals.userId, ctx.user.id)));
       return { success: true };
     }),
     delete: protectedProcedure.input(z.object({ goalId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
-      const goal = await ownGoal(ctx.user.id, input.goalId);
-      if (!goal.isCustom) throw new Error("Default goals cannot be deleted.");
+      await ownGoal(ctx.user.id, input.goalId);
       const db = await dbOrThrow();
       await db.delete(goals).where(and(eq(goals.id, input.goalId), eq(goals.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    clearAll: protectedProcedure.input(accountIdInput.extend({ confirmed: z.literal(true) })).mutation(async ({ ctx, input }) => {
+      await getOwnedAccount(ctx.user.id, input.accountId);
+      const db = await dbOrThrow();
+      await db.delete(goals).where(and(eq(goals.userId, ctx.user.id), eq(goals.accountId, input.accountId)));
       return { success: true };
     }),
   }),
@@ -209,6 +217,23 @@ export const goldRouter = router({
       const db = await dbOrThrow();
       await db.insert(notificationSettings).values({ userId: ctx.user.id, ...input }).onDuplicateKeyUpdate({ set: input });
       return { success: true };
+    }),
+    recordGoalAlerts: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), alerts: z.array(z.object({ goalId: z.number().int().positive(), status: z.enum(["AT_RISK", "BREACHED", "MET"]), cycleKey: z.string().min(4).max(24), message: z.string().trim().min(1).max(800) })).max(20) })).mutation(async ({ ctx, input }) => {
+      await getOwnedAccount(ctx.user.id, input.accountId);
+      const db = await dbOrThrow();
+      const [settings] = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, ctx.user.id)).limit(1);
+      if (settings && !settings.goalAlerts) return { recorded: 0 };
+      let recorded = 0;
+      for (const alert of input.alerts) {
+        const goal = await ownGoal(ctx.user.id, alert.goalId);
+        if (!goal.active || !goal.notify || goal.accountId !== input.accountId) continue;
+        const type = `GOAL_${alert.status}_${goal.id}_${alert.cycleKey}`;
+        const existing = await db.select({ id: notificationHistory.id }).from(notificationHistory).where(and(eq(notificationHistory.userId, ctx.user.id), eq(notificationHistory.type, type))).limit(1);
+        if (existing[0]) continue;
+        await db.insert(notificationHistory).values({ userId: ctx.user.id, accountId: input.accountId, type, message: alert.message });
+        recorded += 1;
+      }
+      return { recorded };
     }),
     markRead: protectedProcedure.input(z.object({ notificationId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const db = await dbOrThrow();

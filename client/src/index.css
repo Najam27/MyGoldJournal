@@ -5,6 +5,7 @@
 @import "./recovery-workstation.css";
 @import "./theme-audit.css";
 @import "./light-audit-fix.css";
+@import "./flexible-goals.css";
 
 @custom-variant dark (&:is(.dark *));
 

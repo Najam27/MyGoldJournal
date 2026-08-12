@@ -97,3 +97,8 @@
 - [x] Run and document the missing light-theme tablet and wide-desktop visual audits for the upgraded shell and recovery states, fixing any issues found.
 - [x] Add focused regression coverage for the upgraded automation and recovery-state presentation before final validation.
 - [x] Reconfirm responsive and dark/light validation after the missing light-theme breakpoint checks, while retaining the previously completed test, type, build, and service-worker validation.
+- [x] Replace the current Goals dashboard and its hard-coded goal assumptions with an account-scoped configurable daily, weekly, and monthly goals system.
+- [x] Support creating, editing, enabling, disabling, and deleting any goal, including custom names, goal periods, metric types, comparison rules, targets, and notifications.
+- [x] Automatically calculate real-data goal progress from the selected account’s closed trades and surface risk-first goal insights and notifications without placing or modifying trades.
+- [x] Add goal-management and goal-notification regression coverage, then complete full validation for the redesigned workflow.
+- [ ] Retry physical removal of hidden legacy non-custom goal rows when the external TiDB DNS outage has cleared; legacy rows are already excluded from every journal read.
