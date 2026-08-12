@@ -8,6 +8,7 @@ export type EdgeTrade = {
   level?: string | null;
   result: string;
   pnl: number | string | null;
+  tradeDate?: number | string | Date | null;
 };
 
 export type EdgeRow = {

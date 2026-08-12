@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./gold-overrides.css";
+@import "./visual-upgrade.css";
+@import "./recovery-workstation.css";
+@import "./theme-audit.css";
+@import "./light-audit-fix.css";
 
 @custom-variant dark (&:is(.dark *));
 

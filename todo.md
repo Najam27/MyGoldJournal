@@ -90,3 +90,10 @@
 - [x] Add multi-account connector regression coverage and validate the updated workflow.
 - [x] Remove all MT5 Connect navigation, UI, local bridge download, import controls, storage, and protected import workflow from Gold Journal.
 - [x] Remove MT5-specific tests and validate the remaining application after the removal.
+- [x] Add a professional shared 3D depth, lighting, and restrained motion system that remains accessible with reduced motion enabled.
+- [x] Upgrade primary journal surfaces, navigation, cards, and empty/recovery states with consistent professional visual hierarchy across dark and light themes.
+- [x] Add deterministic in-app workflow automations for trading readiness, rule guardrails, and action prioritization based on real journal data.
+- [x] Refine loading and recovery states so the journal retains visible professional workstation context rather than reading as a generic centered error card.
+- [x] Run and document the missing light-theme tablet and wide-desktop visual audits for the upgraded shell and recovery states, fixing any issues found.
+- [x] Add focused regression coverage for the upgraded automation and recovery-state presentation before final validation.
+- [x] Reconfirm responsive and dark/light validation after the missing light-theme breakpoint checks, while retaining the previously completed test, type, build, and service-worker validation.

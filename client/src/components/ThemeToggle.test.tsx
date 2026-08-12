@@ -11,6 +11,14 @@ describe("ThemeToggle", () => {
   beforeEach(() => { localStorage.clear(); document.documentElement.classList.remove("dark"); });
   afterEach(() => cleanup());
 
+  it("honors an explicit light-theme preview request before the saved preference", () => {
+    window.history.replaceState({}, "", "/?theme=light");
+    localStorage.setItem("theme", "dark");
+    render(<ThemeProvider defaultTheme="dark" switchable><ThemeToggle /></ThemeProvider>);
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+    window.history.replaceState({}, "", "/");
+  });
+
   it("switches the document theme, persists the user selection, and retains semantic palette tokens", () => {
     const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
     expect(styles).toMatch(/:root\s*\{[\s\S]*?--gj-shell:\s*#f6f8fb[\s\S]*?--gj-text:\s*#15202b/);

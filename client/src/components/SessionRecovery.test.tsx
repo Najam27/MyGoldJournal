@@ -9,6 +9,8 @@ describe("SessionRecovery", () => {
     const retry = vi.fn(); const reconnect = vi.fn();
     render(<SessionRecovery onRetry={retry} onReconnect={reconnect} />);
     expect(screen.getByText("Your journal is taking longer than expected.")).toBeTruthy();
+    expect(screen.getByText("WORKSTATION STATUS")).toBeTruthy();
+    expect(screen.getByText("Private records locked")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Retry secure sync" }));
     fireEvent.click(screen.getByRole("button", { name: "Reconnect session" }));
     expect(retry).toHaveBeenCalledTimes(1); expect(reconnect).toHaveBeenCalledTimes(1);

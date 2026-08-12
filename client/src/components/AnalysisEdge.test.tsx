@@ -16,5 +16,8 @@ describe("AnalysisEdge", () => {
     expect(screen.getByText("LEVEL EDGE")).toBeTruthy();
     expect(screen.getByText("SESSION × TIMEFRAME")).toBeTruthy();
     expect(screen.getByText("London · 15m")).toBeTruthy();
+    expect(screen.getByText("Trade discipline autopilot")).toBeTruthy();
+    expect(screen.getByText("LOSS GUARDRAIL")).toBeTruthy();
+    expect(screen.getByText("JOURNAL QUALITY")).toBeTruthy();
   });
 });
