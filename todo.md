@@ -48,3 +48,7 @@
 - [x] Add an intentional light theme with semantic surface, text, border, and status tokens that preserve contrast across cards, tables, dialogs, charts, and floating controls.
 - [x] Add a visible theme switch and ensure shared header controls, form elements, export dialog, and responsive navigation patterns follow the active theme.
 - [x] Add responsive/theme regression checks for the document theme class, local persistence, and semantic light/dark palette declarations.
+- [x] Fix account selector and native option-menu contrast so account names and choices remain readable in dark mode.
+- [ ] Finish an authenticated dark-mode audit across shared cards, tables, dialogs, and form fields, then document the reviewed breakpoints and any further fixes.
+- [x] Expand the accessible per-trade card-view action to cover every persisted trade field, including record metadata, alongside signed screenshot evidence.
+- [x] Add persistent custom-value controls for every configurable New Trade journal option, making added values available in future entries.
