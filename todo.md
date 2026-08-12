@@ -74,3 +74,6 @@
 - [x] Add the same OAuth-aware recoverable handling to the protected-session reconnect action.
 - [x] Verify the reliability-boundary documentation was persisted before marking that documentation work complete.
 - [x] Run the full regression suite, type check, production build, and service-worker syntax validation after the reliability updates.
+- [x] Add and test a server-side OAuth provider probe deadline that returns an unavailable result when the underlying fetch never settles.
+- [x] Add a client-visible OAuth recovery deadline so login and protected-session reconnect controls become recoverable even if their health request remains pending.
+- [x] Run the full regression suite, type check, production build, and service-worker syntax validation after the final client-side OAuth recovery-deadline change.

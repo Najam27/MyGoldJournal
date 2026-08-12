@@ -63,12 +63,22 @@ describe("auth.logout", () => {
 });
 
 describe("auth.oauthStatus", () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
   it("reports an unavailable OAuth service without exposing provider errors", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("DNS lookup failed")));
     const { ctx } = createAuthContext();
 
     await expect(appRouter.createCaller(ctx).auth.oauthStatus()).resolves.toEqual({ available: false });
+  });
+
+  it("returns unavailable after the bounded probe deadline even when fetch never settles", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => undefined)));
+    const { ctx } = createAuthContext();
+    const status = appRouter.createCaller(ctx).auth.oauthStatus();
+
+    await vi.advanceTimersByTimeAsync(2_500);
+    await expect(status).resolves.toEqual({ available: false });
   });
 });

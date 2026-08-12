@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { oauthStatusQuery } = vi.hoisted(() => ({ oauthStatusQuery: vi.fn() }));
@@ -21,6 +21,7 @@ describe("Gold Journal login availability", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   it("surfaces an OAuth outage as a recoverable sign-in state", () => {
@@ -32,5 +33,16 @@ describe("Gold Journal login availability", () => {
     expect(screen.getByRole("alert").textContent).toContain("Secure sign-in is temporarily unavailable.");
     fireEvent.click(screen.getByRole("button", { name: "Recheck sign-in service" }));
     expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("exits the checking state after the client recovery deadline when the health request stalls", () => {
+    vi.useFakeTimers();
+    oauthStatusQuery.mockReturnValue({ data: undefined, isError: false, isLoading: true, isFetching: true, refetch: vi.fn() });
+
+    render(<LoginScreen />);
+    act(() => { vi.advanceTimersByTime(3_500); });
+
+    expect(screen.getByRole("alert").textContent).toContain("Secure sign-in is temporarily unavailable.");
+    expect(screen.getByRole("button", { name: "Recheck sign-in service" })).toBeTruthy();
   });
 });
