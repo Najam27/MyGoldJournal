@@ -11,7 +11,7 @@
 - [ ] Implement Missed Trades logging and exports, P&L Calendar, Plan & Execution entries, and their associated calculations.
 - [ ] Implement data-driven Analysis charts, performance heatmaps, discipline trends, and meaningful empty/loading/error states.
 - [x] Implement the AI Mentor screen with locally stored user-provided OpenRouter key controls, payload preparation, analysis state, saved reports, and safe no-key/error states.
-- [ ] Implement MT5 bridge configuration, connection status, import history, and clear feedback for bridge failures and successful imports.
+- [x] Implement MT5 bridge configuration, connection status, import history, and clear feedback for bridge failures and successful imports.
 - [ ] Implement Options management for profile, data reset confirmations, dropdown lists, and trading-rule configuration.
 - [x] Add installable PWA configuration: manifest, service worker that caches static assets only, update banner, offline banner, Android/desktop install prompt, and iOS guidance.
 - [x] Restrict the service worker to caching true static assets only, excluding HTML documents, APIs, and private storage paths.
@@ -35,3 +35,5 @@
 - [x] Add MT5 workflow integration tests for persisted bridge settings, target-account selection, and import outcome feedback.
 - [x] Add a mounted MT5 page test for persisted settings, target selection, and rendered bridge success/failure feedback.
 - [x] Add a mounted MT5 successful-sync test that verifies status, latest-import details, counts, and the target account name.
+- [x] Add a persistent MT5 import-run history with timestamp, target account, imported/skipped counts, and status, then render it in the MT5 view.
+- [x] Add mounted MT5 view coverage for rendering past import runs.

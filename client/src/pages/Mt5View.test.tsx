@@ -2,7 +2,7 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { saveMt5Profile, saveMt5Settings } from "@/lib/mt5Storage";
+import { saveMt5ImportRun, saveMt5Profile, saveMt5Settings } from "@/lib/mt5Storage";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -37,6 +37,13 @@ describe("MT5 view integration", () => {
     expect(screen.getByDisplayValue("14")).toBeTruthy();
     expect(screen.getByDisplayValue("MT5 Funded")).toBeTruthy();
     expect(screen.getByText(/Selected: MT5 Funded/)).toBeTruthy();
+  });
+
+  it("renders persisted import-run history in the MT5 view", () => {
+    saveMt5ImportRun({ at: "2026-08-12T00:00:00.000Z", imported: 3, skipped: 1, accountName: "MT5 Funded", status: "SUCCESS" });
+    render(<Mt5View />);
+    expect(screen.getByText("Recent bridge activity")).toBeTruthy();
+    expect(screen.getByText("3 imported · 1 skipped")).toBeTruthy();
   });
 
   it("uses the newly selected account and renders bridge failure guidance", async () => {

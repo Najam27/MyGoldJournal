@@ -12,4 +12,6 @@ During the resumed review, the secure callback exposed a missing `users` table. 
 
 The repaired sign-in route was relaunched through the visible entry control. The authentication provider is currently loading the secure account page; the next browser check will determine whether an existing signed-in session completes the callback or whether user interaction is still required.
 
+The current authenticated preview was verified at desktop and 375px mobile widths. The responsive trade-log shell maintains readable metric cards, compact action controls, the mobile navigation bar, and access to the fixed account-management and MT5-import controls. The full-page desktop capture intentionally omits non-top fixed chrome, while the mobile viewport confirms the fixed controls render at the expected thumb-accessible edge.
+
 The authenticated dashboard remains the next browser-verification target because preview access initially stopped at the protected entry state. Core server procedures, cloud tables, and client flows are in place for the journal once authenticated.

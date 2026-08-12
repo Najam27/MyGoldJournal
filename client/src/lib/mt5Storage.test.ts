@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
-import { loadMt5Profile, loadMt5Settings, saveMt5Profile, saveMt5Settings } from "./mt5Storage";
+import { loadMt5ImportHistory, loadMt5Profile, loadMt5Settings, saveMt5ImportRun, saveMt5Profile, saveMt5Settings } from "./mt5Storage";
 
 describe("MT5 workflow persistence", () => {
   beforeEach(() => localStorage.clear());
@@ -13,5 +13,11 @@ describe("MT5 workflow persistence", () => {
   it("persists the selected account target used by a later MT5 import", () => {
     saveMt5Profile({ accountId: 24, accountName: "MT5 Funded", url: "http://localhost:7842", days: 31 });
     expect(loadMt5Profile()).toEqual({ accountId: 24, accountName: "MT5 Funded", url: "http://localhost:7842", days: 31 });
+  });
+
+  it("keeps a bounded, newest-first history of import results", () => {
+    saveMt5ImportRun({ at: "2026-08-12T00:00:00.000Z", imported: 2, skipped: 1, accountName: "Funded", status: "SUCCESS" });
+    saveMt5ImportRun({ at: "2026-08-12T01:00:00.000Z", imported: 0, skipped: 0, accountName: "Funded", status: "FAILED", message: "bridge unavailable" });
+    expect(loadMt5ImportHistory()).toMatchObject([{ status: "FAILED" }, { imported: 2, skipped: 1 }]);
   });
 });
