@@ -52,3 +52,5 @@
 - [ ] Finish an authenticated dark-mode audit across shared cards, tables, dialogs, and form fields, then document the reviewed breakpoints and any further fixes.
 - [x] Expand the accessible per-trade card-view action to cover every persisted trade field, including record metadata, alongside signed screenshot evidence.
 - [x] Add persistent custom-value controls for every configurable New Trade journal option, making added values available in future entries.
+- [x] Add a complete in-app MT5 bridge setup process covering local bridge installation, terminal preparation, account mapping, connection testing, and import execution.
+- [x] Add clear MT5 bridge diagnostics and recovery guidance for unavailable bridge, browser security, incorrect URL, invalid response, and empty-import outcomes.

@@ -33,6 +33,9 @@ describe("MT5 view integration", () => {
 
   it("loads the persisted bridge settings and target account into the page", () => {
     render(<Mt5View />);
+    expect(screen.getByText("Make the MT5 bridge work on this computer")).toBeTruthy();
+    expect(screen.getByText("Open MetaTrader 5 on this PC")).toBeTruthy();
+    expect(screen.getByText(/POST \/sync/)).toBeTruthy();
     expect(screen.getByDisplayValue("http://127.0.0.1:7900")).toBeTruthy();
     expect(screen.getByDisplayValue("14")).toBeTruthy();
     expect(screen.getByDisplayValue("MT5 Funded")).toBeTruthy();
