@@ -14,4 +14,6 @@ The repaired sign-in route was relaunched through the visible entry control. The
 
 The current authenticated preview was verified at desktop and 375px mobile widths. The responsive trade-log shell maintains readable metric cards, compact action controls, the mobile navigation bar, and access to the fixed account-management and MT5-import controls. The full-page desktop capture intentionally omits non-top fixed chrome, while the mobile viewport confirms the fixed controls render at the expected thumb-accessible edge.
 
+After adding notification and rules-list controls, the 375px mobile viewport was reviewed again. The bell remains isolated in the top bar, while the stacked rule-list, MT5, and account controls remain visually distinguishable at the lower-right edge without obscuring primary trade actions.
+
 The authenticated dashboard remains the next browser-verification target because preview access initially stopped at the protected entry state. Core server procedures, cloud tables, and client flows are in place for the journal once authenticated.

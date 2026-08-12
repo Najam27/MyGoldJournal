@@ -6,6 +6,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { PwaUpdateBanner } from "./components/PwaUpdateBanner";
 import { AccountRenameControl } from "./components/AccountRenameControl";
 import { Mt5AccountImportControl } from "./components/Mt5AccountImportControl";
+import { NotificationCenter } from "./components/NotificationCenter";
+import { OptionListManager } from "./components/OptionListManager";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 
@@ -38,6 +40,8 @@ function App() {
           <PwaUpdateBanner />
           <AccountRenameControl />
           <Mt5AccountImportControl />
+          <NotificationCenter />
+          <OptionListManager />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
