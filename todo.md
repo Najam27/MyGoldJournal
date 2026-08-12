@@ -54,3 +54,6 @@
 - [x] Add persistent custom-value controls for every configurable New Trade journal option, making added values available in future entries.
 - [x] Add a complete in-app MT5 bridge setup process covering local bridge installation, terminal preparation, account mapping, connection testing, and import execution.
 - [x] Add clear MT5 bridge diagnostics and recovery guidance for unavailable bridge, browser security, incorrect URL, invalid response, and empty-import outcomes.
+- [x] Complete New Trade fields from the supplied reference, including direction versus bias, SL/TP placement, mistake, hold quality, and structured screenshot/notes/emotion inputs.
+- [x] Add a weekly P&L summary at the end of each week in the P&L Calendar.
+- [x] Add a searchable month picker to the monthly trading overview above the Trade Log controls, retaining trade, win/loss, win-rate, P&L, and risk/reward metrics.
