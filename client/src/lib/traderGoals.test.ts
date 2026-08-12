@@ -5,7 +5,14 @@ import { encodeGoalControl } from "@shared/goalStrategy";
 const now = new Date("2026-08-12T12:00:00Z");
 const rows = [{ id: 1, tradeDate: "2026-08-12T08:00:00Z", result: "LOSS", pnl: "-120", risk: "60", reward: "120", patienceScore: 2, setupQuality: "B", mistake: "Revenge trade" }, { id: 2, tradeDate: "2026-08-12T10:00:00Z", result: "LOSS", pnl: "-60", risk: "60", reward: "120", patienceScore: 3, setupQuality: "A" }];
 describe("professional trader goal assessment", () => {
-  it("uses PKT-period net loss and escalates an over-limit guardrail to breached", () => { const value = assessTraderGoal({ id: 1, name: "Loss", period: "DAILY", metric: "daily_loss", comparison: "LTE", target: "150", active: true }, rows, [], now); expect(value).toMatchObject({ value: 180, status: "BREACHED", rows: 2 }); });
+  it("uses a negative P&L floor for loss controls and keeps legacy positive loss limits compatible", () => {
+    const breached = assessTraderGoal({ id: 1, name: "Loss", period: "DAILY", metric: "daily_loss", comparison: "LTE", target: "-150", active: true }, rows, [], now);
+    const atRisk = assessTraderGoal({ id: 2, name: "Loss", period: "DAILY", metric: "daily_loss", comparison: "LTE", target: "-200", active: true }, rows, [], now);
+    const legacyPositive = assessTraderGoal({ id: 3, name: "Legacy loss", period: "DAILY", metric: "daily_loss", comparison: "LTE", target: "150", active: true }, rows, [], now);
+    expect(breached).toMatchObject({ value: -180, target: -150, current: "-$180.00", targetLabel: "-$150.00", status: "BREACHED", rows: 2 });
+    expect(atRisk).toMatchObject({ value: -180, target: -200, status: "AT_RISK", remaining: 20 });
+    expect(legacyPositive).toMatchObject({ target: -150, status: "BREACHED" });
+  });
   it("derives consecutive losses and revenge-tag count from actual saved execution data", () => { expect(assessTraderGoal({ id: 2, name: "Streak", period: "DAILY", metric: "consecutive_losses", comparison: "LTE", target: "2", active: true }, rows, [], now).value).toBe(2); expect(assessTraderGoal({ id: 3, name: "Revenge", period: "DAILY", metric: "revenge_trades", comparison: "LTE", target: "0", active: true }, rows, [], now).status).toBe("BREACHED"); });
   it("marks active performance targets as in progress instead of falsely pending", () => { expect(assessTraderGoal({ id: 4, name: "Profit", period: "MONTHLY", metric: "net_pnl", comparison: "GTE", target: "500", active: true }, rows, [], now).status).toBe("IN_PROGRESS"); });
   it("excludes open positions from goal progress, risk guardrails, and activity", () => {
@@ -21,8 +28,8 @@ describe("professional trader goal assessment", () => {
   });
 
   it("measures strategy compliance against the selected execution scope and ignores off-scope trades", () => {
-    const scopedRows = [{ id: 1, tradeDate: "2026-08-12T08:00:00Z", result: "WIN", pnl: "100", session: "London", timeframe: "15m", setupQuality: "A", mistake: "" }, { id: 2, tradeDate: "2026-08-12T10:00:00Z", result: "LOSS", pnl: "-50", session: "London", timeframe: "15m", setupQuality: "B", mistake: "Early entry" }, { id: 3, tradeDate: "2026-08-12T11:00:00Z", result: "WIN", pnl: "40", session: "New York", timeframe: "15m", setupQuality: "A", mistake: "" }];
-    const scoped = assessTraderGoal({ id: 12, name: "London A setup", description: encodeGoalControl("Only A London entries.", { session: "London", timeframe: "15m", setupQuality: "A" }), period: "WEEKLY", metric: "strategy_compliance", comparison: "GTE", target: 80, active: true }, scopedRows, [], now);
-    expect(scoped).toMatchObject({ value: 33.33333333333333, status: "IN_PROGRESS", scopeLabel: "London · 15m · A" });
+    const scopedRows = [{ id: 1, tradeDate: "2026-08-12T08:00:00Z", result: "WIN", pnl: "100", session: "London", timeframe: "15m", level: "RBS | TLJ", setupQuality: "A", mistake: "" }, { id: 2, tradeDate: "2026-08-12T10:00:00Z", result: "LOSS", pnl: "-50", session: "London", timeframe: "15m", level: "RBS", setupQuality: "B", mistake: "Early entry" }, { id: 3, tradeDate: "2026-08-12T11:00:00Z", result: "WIN", pnl: "40", session: "New York", timeframe: "15m", level: "TLJ", setupQuality: "A", mistake: "" }];
+    const scoped = assessTraderGoal({ id: 12, name: "London A setup", description: encodeGoalControl("Only A London entries.", { session: "London", timeframe: "15m", level: "TLJ", setupQuality: "A" }), period: "WEEKLY", metric: "strategy_compliance", comparison: "GTE", target: 80, active: true }, scopedRows, [], now);
+    expect(scoped).toMatchObject({ value: 33.33333333333333, status: "IN_PROGRESS", scopeLabel: "London · 15m · TLJ · A" });
   });
 });

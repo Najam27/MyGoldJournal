@@ -116,3 +116,6 @@
 - [x] Replace the oversized card-grid presentation with a table-driven tracker for daily, weekly, and monthly controls, including current value, limit, status, action, scope, and row actions.
 - [x] Audit and strengthen control progress, status, alert, and strategy-scope logic through realistic risk, behavior, and habit scenarios.
 - [x] Add layout and logic regressions, validate desktop and mobile Goals views, and publish the repaired workflow.
+- [x] Correct daily and weekly loss controls so an entered positive limit is transparently evaluated and displayed as a negative P&L floor, with no confusing sign inversion.
+- [x] Add reusable multi-select controls for eligible strategy and execution trade fields, while preserving single-select semantics where a field is inherently singular.
+- [x] Maintain backward compatibility for existing single-value journal entries and add regression coverage for negative-loss semantics plus multi-select persistence.

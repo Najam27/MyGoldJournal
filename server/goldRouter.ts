@@ -10,7 +10,11 @@ import { storageGetSignedUrl, storagePut } from "./storage";
 
 const optionalText = (max = 5000) => z.string().trim().max(max).optional().default("");
 const accountIdInput = z.object({ accountId: z.number().int().positive() });
-const goalInput = z.object({ accountId: z.number().int().positive(), name: z.string().trim().min(1).max(120), description: optionalText(500), period: z.enum(["DAILY", "WEEKLY", "MONTHLY"]), metric: z.string().trim().min(1).max(80), comparison: z.enum(["GTE", "LTE"]), target: z.number().min(0), notify: z.boolean().default(true), active: z.boolean().default(true) });
+const lossFloorMetrics = new Set(["daily_loss", "weekly_drawdown"]);
+const goalInput = z.object({ accountId: z.number().int().positive(), name: z.string().trim().min(1).max(120), description: optionalText(500), period: z.enum(["DAILY", "WEEKLY", "MONTHLY"]), metric: z.string().trim().min(1).max(80), comparison: z.enum(["GTE", "LTE"]), target: z.number().min(-1_000_000), notify: z.boolean().default(true), active: z.boolean().default(true) }).superRefine((value, ctx) => {
+  if (lossFloorMetrics.has(value.metric) && value.target >= 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["target"], message: "Loss controls use a negative P&L floor, for example -100." });
+  if (!lossFloorMetrics.has(value.metric) && value.target < 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["target"], message: "Only loss-floor controls can use a negative threshold." });
+});
 
 const tradeInput = z.object({
   accountId: z.number().int().positive(),
@@ -170,7 +174,7 @@ export const goldRouter = router({
       const inserted = await db.insert(goals).values({ ...input, userId: ctx.user.id, target: input.target.toFixed(2), isCustom: true });
       return { success: true, id: Number(inserted[0].insertId) };
     }),
-    update: protectedProcedure.input(goalInput.extend({ goalId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    update: protectedProcedure.input(goalInput.safeExtend({ goalId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const existing = await ownGoal(ctx.user.id, input.goalId);
       await getOwnedAccount(ctx.user.id, input.accountId);
       if (existing.accountId !== input.accountId) throw new Error("Goals cannot be moved between accounts. Create the goal in the destination account instead.");

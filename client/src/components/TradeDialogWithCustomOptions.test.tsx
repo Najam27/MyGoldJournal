@@ -16,7 +16,7 @@ describe("TradeDialogWithCustomOptions", () => {
   beforeEach(() => { mocks.add.mockReset(); mocks.invalidate.mockReset(); mocks.add.mockResolvedValue({ success: true }); });
   afterEach(() => cleanup());
 
-  it("saves a custom configurable field value and selects it for the open trade", async () => {
+  it("saves reusable multi-select strategy, execution, and behavior values for the open trade", async () => {
     const form = { tradeDate: "2026-08-12", session: "London", direction: "BUY", result: "WIN", level: "", timeframe: "15m", setupQuality: "A", executionType: "Manual Direct", marketCondition: "", confirmationType: "", patienceScore: "3", risk: "", reward: "", pnl: "", notes: "", emotionBefore: "", emotionDuring: "", emotionAfter: "" };
     const setForm = vi.fn();
     const props = { open: true, setOpen: vi.fn(), setForm, editing: undefined, onSave: vi.fn(), pending: false, screenshot: undefined, setScreenshot: vi.fn(), progress: 0 };
@@ -24,22 +24,32 @@ describe("TradeDialogWithCustomOptions", () => {
     expect(screen.getByText("Direction vs bias")).toBeTruthy();
     expect(screen.getByText("SL placement")).toBeTruthy();
     expect(screen.getByText("TP placement")).toBeTruthy();
-    expect(screen.getByText("Mistake")).toBeTruthy();
+    expect(screen.getByText("Mistake / rule-break tags")).toBeTruthy();
     expect(screen.getByText("Hold quality")).toBeTruthy();
-    expect(screen.getByRole("option", { name: "Saved level" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Saved level" })).toBeTruthy();
     ["FOMO", "Revenge", "Overtrading", "Oversize"].forEach(tag => expect(screen.getByRole("button", { name: tag })).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: "FOMO" }));
     expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ mistake: "FOMO" }));
     rerender(<TradeDialogWithCustomOptions {...props} form={{ ...form, mistake: "FOMO" }} />);
     fireEvent.click(screen.getByRole("button", { name: "Revenge" }));
     expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ mistake: "FOMO | Revenge" }));
-    fireEvent.change(screen.getByLabelText("Add custom behavior tag"), { target: { value: "Ignored news" } });
-    fireEvent.click(screen.getByLabelText("Save custom behavior tag"));
+    fireEvent.change(screen.getByLabelText("Add custom Mistake option"), { target: { value: "Ignored news" } });
+    fireEvent.click(screen.getByLabelText("Save custom Mistake option"));
     await waitFor(() => expect(mocks.add).toHaveBeenCalledWith({ category: "Mistake", value: "Ignored news" }));
     expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ mistake: "FOMO | Ignored news" }));
-    fireEvent.change(screen.getByLabelText("Add custom Level"), { target: { value: "Custom zone" } });
-    fireEvent.click(screen.getByLabelText("Save custom Level"));
+    fireEvent.click(screen.getByRole("button", { name: "Saved level" }));
+    expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ level: "Saved level" }));
+    rerender(<TradeDialogWithCustomOptions {...props} form={{ ...form, level: "Saved level" }} />);
+    fireEvent.change(screen.getByLabelText("Add custom Level option"), { target: { value: "Custom zone" } });
+    fireEvent.click(screen.getByLabelText("Save custom Level option"));
     await waitFor(() => expect(mocks.add).toHaveBeenCalledWith({ category: "Level", value: "Custom zone" }));
-    await waitFor(() => expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ level: "Custom zone" })));
+    await waitFor(() => expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ level: "Saved level | Custom zone" })));
+    fireEvent.click(screen.getByText("BOS"));
+    expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ confirmationType: "BOS" }));
+    rerender(<TradeDialogWithCustomOptions {...props} form={{ ...form, confirmationType: "BOS" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "CHoCH" }));
+    expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ confirmationType: "BOS | CHoCH" }));
+    fireEvent.click(screen.getByText("Trending"));
+    expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ marketCondition: "Trending" }));
   });
 });
