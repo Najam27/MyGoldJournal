@@ -37,9 +37,11 @@ describe("MT5 view integration", () => {
 
   it("loads the persisted bridge settings and target account into the page", () => {
     render(<Mt5View />);
-    expect(screen.getByText("Connect your MT5 terminal in five steps")).toBeTruthy();
-    expect(screen.getByText("Open MetaTrader 5 on this PC")).toBeTruthy();
+    expect(screen.getByText("Connect the right MT5 account in five steps")).toBeTruthy();
+    expect(screen.getByText("Choose the source MT5 terminal")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Download MT5 connector/i })).toBeTruthy();
+    expect(screen.getAllByText(/KeyboardInterrupt/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/--terminal/).length).toBeGreaterThan(0);
     expect(screen.getByDisplayValue("http://127.0.0.1:7900")).toBeTruthy();
     expect(screen.getByDisplayValue("14")).toBeTruthy();
     expect(screen.getByDisplayValue("MT5 Funded")).toBeTruthy();

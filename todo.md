@@ -86,3 +86,5 @@
 - [x] Build a complete in-app MT5 connector workflow with bridge installation, terminal preparation, local endpoint setup, account mapping, test connection, and import controls.
 - [x] Add actionable MT5 diagnostics for unavailable bridge, incorrect local URL, CORS/browser access, invalid payload, account mismatch, and empty history.
 - [x] Add or strengthen MT5 connector tests and run complete regression validation.
+- [x] Update MT5 Connect to explain normal connector shutdown and support explicit selection among multiple desktop MT5 terminal accounts.
+- [x] Add multi-account connector regression coverage and validate the updated workflow.

@@ -9,5 +9,8 @@ describe("Gold Journal MT5 bridge installer", () => {
     expect(MT5_BRIDGE_PYTHON).toContain('"/sync"');
     expect(MT5_BRIDGE_PYTHON).toContain('"Access-Control-Allow-Origin", "*"');
     expect(MT5_BRIDGE_PYTHON).toContain('"ticket": str(deal.ticket)');
+    expect(MT5_BRIDGE_PYTHON).toContain('parser.add_argument("--terminal"');
+    expect(MT5_BRIDGE_PYTHON).toContain('parser.add_argument("--port"');
+    expect(MT5_BRIDGE_PYTHON).toContain('"account": account');
   });
 });
