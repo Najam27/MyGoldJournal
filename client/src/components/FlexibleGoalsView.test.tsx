@@ -15,7 +15,7 @@ describe("FlexibleGoalsView", () => {
     render(<FlexibleGoalsView {...baseProps} goals={[]} />);
     expect(screen.getByText("No generic goals. Build a control desk.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Add first control" }));
-    expect(screen.getByText("Build your trading guardrails")).toBeTruthy();
+    expect(screen.getByText("Choose a rule to configure")).toBeTruthy();
     expect(screen.getByText("Max daily loss")).toBeTruthy();
     expect(screen.getByText("No FOMO entries")).toBeTruthy();
     expect(screen.getByText("Strategy compliance")).toBeTruthy();
@@ -41,7 +41,9 @@ describe("FlexibleGoalsView", () => {
     expect(screen.getByText("Loss ceiling")).toBeTruthy();
     expect(screen.getByText("No revenge")).toBeTruthy();
     expect(screen.getByText("Stop for the day and protect tomorrow’s capital.")).toBeTruthy();
-    expect(document.querySelectorAll(".flex-goal-card.risk").length).toBeGreaterThan(0);
+    ["Control", "Scope", "Progress", "Status", "Next action"].forEach(label => expect(screen.getByRole("columnheader", { name: label })).toBeTruthy());
+    expect(screen.getByRole("button", { name: "Weekly" })).toBeTruthy();
+    expect(document.querySelectorAll(".control-table tr.risk").length).toBeGreaterThan(0);
     fireEvent.click(screen.getAllByTitle("Pause control")[0]);
     fireEvent.click(screen.getAllByTitle("Disable control alerts")[0]);
     fireEvent.click(screen.getAllByTitle("Delete control")[0]);

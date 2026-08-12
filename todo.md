@@ -112,3 +112,7 @@
 - [x] Replace the single-choice Mistake selector with persisted multi-tag behavior capture so one trade can record FOMO, revenge, moved SL, and other rule breaks together.
 - [x] Preserve, edit, and analyze multiple behavior tags end-to-end through trade create/update flows while remaining compatible with existing single-value mistake records.
 - [x] Add regression coverage proving multiple saved behavior tags flow from trade entry into the strategy-control calculations.
+- [x] Rebuild the broken Goals page as a readable summary-card and compact control-table workspace with reliable spacing, status hierarchy, and responsive behavior.
+- [x] Replace the oversized card-grid presentation with a table-driven tracker for daily, weekly, and monthly controls, including current value, limit, status, action, scope, and row actions.
+- [x] Audit and strengthen control progress, status, alert, and strategy-scope logic through realistic risk, behavior, and habit scenarios.
+- [x] Add layout and logic regressions, validate desktop and mobile Goals views, and publish the repaired workflow.
