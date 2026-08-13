@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { registerMt5Ingest } from "../mt5Ingest";
+import { getActiveMt5Connection, recordMt5HistoryFailure } from "../mt5Db";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -38,10 +39,20 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMt5Ingest(app);
-  app.use((error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  app.use(async (error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path === "/api/mt5" && error instanceof SyntaxError && "body" in error) {
       const detail = error.message || "Malformed JSON request body.";
       console.warn("[MT5] malformed JSON payload", detail);
+      const raw = typeof (error as { body?: unknown }).body === "string" ? (error as { body: string }).body : "";
+      const apiKey = raw.match(/"api_key"\s*:\s*"([^"\\]{24,96})"/)?.[1];
+      if (apiKey) {
+        try {
+          const connection = await getActiveMt5Connection(apiKey);
+          if (connection) await recordMt5HistoryFailure(connection.id, `Malformed JSON — ${detail}`);
+        } catch {
+          // Preserve an actionable parser response even if diagnostics cannot persist.
+        }
+      }
       res.status(400).json({ ok: false, code: "INVALID_JSON", details: [detail] });
       return;
     }
