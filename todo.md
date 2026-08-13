@@ -141,3 +141,7 @@
 - [x] Correct MT5-generated Trade Log session labels to the intended PKT session boundaries, including 4:00 pm PKT as Pre-NY.
 - [x] Remove journal balance and deposit/withdraw actions for MT5-linked Trade Logs, using broker balance and equity as the account balance display instead.
 - [ ] Validate historical MT5 closes, live floating positions, PKT session labels, and linked-account summary behavior with the connected account data.
+- [x] Research and correct all managed-EA historical-deal collection assumptions against the official MQL5 history API behavior.
+- [x] Audit MT5 request delivery, server validation, position deduplication, and Trade Log synchronization for every historical-trade failure mode.
+- [x] Replace the current historical-deal batch logic with a resilient position-level backfill that proves every prior closed position reaches Trade Log exactly once.
+- [x] Add comprehensive MT5 history fault regressions and validate the repaired path against the connected account before publishing.
