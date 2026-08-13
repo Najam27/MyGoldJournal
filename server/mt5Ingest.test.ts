@@ -34,6 +34,11 @@ describe("MT5 EA ingest", () => {
     expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ openTime: new Date("2026-07-11T04:30:00Z") }));
   });
 
+  it("preserves an explicit UTC+3 broker timestamp so journal sync can classify the corresponding PKT session", async () => {
+    await expect(processMt5Payload({ ...openPayload(key("broker-utc3")), open_time: "2026.07.11 09:30:00+03:00" })).resolves.toEqual({ status: 200, body: { ok: true, event: "open" } });
+    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ openTime: new Date("2026-07-11T06:30:00Z") }));
+  });
+
   it("rejects an unknown API key without touching a connection or writing a position", async () => {
     mocks.getActive.mockResolvedValue(null);
     await expect(processMt5Payload(openPayload(key("unknown")))).resolves.toEqual({ status: 401, body: { ok: false, code: "UNAUTHORIZED" } });

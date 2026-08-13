@@ -38,12 +38,13 @@ describe("TradeLogWithViewer", () => {
     expect(screen.queryByRole("button", { name: "Withdraw" })).toBeNull();
   });
 
-  it("uses the connected broker balance in MT5-linked table rows and the trade card", () => {
+  it("keeps the connected broker balance in the summary and labels it as current only in the trade card", () => {
     const trade = { id: 12, tradeDate: new Date("2026-08-13T09:06:21Z"), session: "Post-London", direction: "SELL", result: "WIN", level: "", timeframe: "", setupQuality: "", confirmationType: "", executionType: "", marketCondition: "", biasAlignment: "", slPlacement: "", tpPlacement: "", mistake: "", holdQuality: "", risk: "0.88", reward: "2.56", pnl: "0.65", emotionBefore: "", emotionDuring: "", emotionAfter: "", notes: "" };
     render(<TradeLogWithViewer stats={{ balance: 5000, winRate: 100, wins: 1, losses: 0, pnl: 0.65, total: 1 }} trades={[trade]} allTrades={[trade]} pagination={{ page: 1, pageSize: 12, total: 1, pageCount: 1 }} listLoading={false} account={{ name: "Primary" }} dangerGoals={[]} hasMt5Connection mt5Summary={{ balance: "4888.25", equity: "4888.25", floatingPnl: "0", currency: "USD" }} mt5LivePositions={[]} search="" resultFilter="ALL" setSearch={vi.fn()} setResultFilter={vi.fn()} onPage={vi.fn()} onNew={vi.fn()} onDuplicate={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onCash={vi.fn()} onCsv={vi.fn()} onExcel={vi.fn()} onPdf={vi.fn()} onClear={vi.fn()} />);
-    expect(screen.getByRole("columnheader", { name: "MT5 balance" })).toBeTruthy();
-    expect(screen.getAllByText("$4,888.25").length).toBeGreaterThan(1);
+    expect(screen.queryByRole("columnheader", { name: "MT5 balance" })).toBeNull();
+    expect(screen.getByText("MT5 balance")).toBeTruthy();
     fireEvent.click(screen.getByLabelText(/View trade from/i));
     expect(screen.queryByText("Running balance")).toBeNull();
+    expect(screen.getByText("Current MT5 balance")).toBeTruthy();
   });
 });

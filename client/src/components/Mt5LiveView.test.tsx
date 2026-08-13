@@ -38,7 +38,7 @@ vi.mock("@/components/ui/dialog", () => ({ Dialog: ({ children }: any) => <>{chi
 import { Mt5LiveView } from "./Mt5LiveView";
 
 describe("Mt5LiveView", () => {
-  it("shows masked credentials, account metrics, historical positions, EA v1.12, and automatic Trade Log synchronization", () => {
+  it("shows masked credentials, account metrics, historical positions, EA v1.13, and automatic Trade Log synchronization", () => {
     const onJournalNow = vi.fn();
     render(<Mt5LiveView account={{ id: 12, name: "GFT 10K" }} accounts={[{ id: 12, name: "GFT 10K" }, { id: 13, name: "FundingPips" }]} onJournalNow={onJournalNow} />);
     expect(screen.getByText("GFT Live")).toBeTruthy();
@@ -49,7 +49,7 @@ describe("Mt5LiveView", () => {
     expect(screen.getByText("$10,042.50")).toBeTruthy();
     expect(screen.getByText(/42 closed positions synced/i)).toBeTruthy();
     const ea = screen.getByRole("link", { name: /Download EA/i });
-    expect(ea.getAttribute("href")).toContain("GoldJournal_EA_a3b87ed8.mq5");
+    expect(ea.getAttribute("href")).toContain("GoldJournal_EA_bf8ddfe3.mq5");
     expect(screen.getByRole("columnheader", { name: "Trade Log" })).toBeTruthy();
     expect(screen.getByText("Syncing")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Journal now" })).toBeNull();

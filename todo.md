@@ -154,3 +154,7 @@
 - [x] Apply the trader-specified PKT session schedule to every auto-synced MT5 trade and backfill already imported journal records.
 - [x] Diagnose and correct the remaining MT5 broker-balance display discrepancy across linked Trade Log rows, cards, summaries, and sidebar.
 - [x] Add exact PKT boundary and linked-broker-balance regressions, then validate the corrected connected-account view.
+- [x] Encode the UTC+3 broker timestamp offset in the MT5 EA payload and correctly parse it before PKT session classification.
+- [x] Shift and reclassify existing auto-imported MT5 history from broker UTC+3 to PKT UTC+5 using the requested session schedule.
+- [x] Remove the misleading repeated current MT5 balance from individual historical Trade Log rows while retaining broker balance and equity in the summary and sidebar.
+- [x] Add broker-timezone and per-row-balance regressions, verify the connected account, and publish the correction.
