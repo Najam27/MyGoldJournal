@@ -119,3 +119,8 @@
 - [x] Correct daily and weekly loss controls so an entered positive limit is transparently evaluated and displayed as a negative P&L floor, with no confusing sign inversion.
 - [x] Add reusable multi-select controls for eligible strategy and execution trade fields, while preserving single-select semantics where a field is inherently singular.
 - [x] Maintain backward compatibility for existing single-value journal entries and add regression coverage for negative-loss semantics plus multi-select persistence.
+- [x] Add account-scoped MT5 connection and live-position storage, including unique API keys, connection state, MT5 ticket deduplication, and secure ownership enforcement.
+- [x] Add a secure public MT5 ingestion endpoint for authenticated Expert Advisor ping, open-position upsert, and close-position updates without exposing browser session credentials.
+- [x] Build an MT5 Live workspace with connection management, setup guidance, live open positions, recent closes, and controlled journal prefill for unjournaled closed trades.
+- [x] Integrate active live positions into the Trade Log without disrupting existing features, and ship the downloadable Gold Journal Expert Advisor file.
+- [x] Add MT5 isolation, API-key, ingest, journal-status, and UI regression coverage, then complete full validation and publish.

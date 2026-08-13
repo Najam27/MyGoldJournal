@@ -1,15 +1,18 @@
 import { and, count, desc, eq, like, or } from "drizzle-orm";
+import { randomBytes } from "crypto";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { accounts, cashMovements, dailyPlans, goals, notificationHistory, notificationSettings, optionLists, skippedTrades, trades } from "../drizzle/schema";
+import { accounts, cashMovements, dailyPlans, goals, mt5Connections, mt5LivePositions, notificationHistory, notificationSettings, optionLists, skippedTrades, trades } from "../drizzle/schema";
 import { getDb } from "./db";
 import { ensureAccount, getJournal, getOwnedAccount, ownsTrade } from "./goldDb";
+import { getMt5Workspace } from "./mt5Db";
 import { toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 import { protectedProcedure, router } from "./_core/trpc";
 import { storageGetSignedUrl, storagePut } from "./storage";
 
 const optionalText = (max = 5000) => z.string().trim().max(max).optional().default("");
 const accountIdInput = z.object({ accountId: z.number().int().positive() });
+const mt5TicketInput = z.string().regex(/^\d+$/).max(20).optional();
 const lossFloorMetrics = new Set(["daily_loss", "weekly_drawdown"]);
 const goalInput = z.object({ accountId: z.number().int().positive(), name: z.string().trim().min(1).max(120), description: optionalText(500), period: z.enum(["DAILY", "WEEKLY", "MONTHLY"]), metric: z.string().trim().min(1).max(80), comparison: z.enum(["GTE", "LTE"]), target: z.number().min(-1_000_000), notify: z.boolean().default(true), active: z.boolean().default(true) }).superRefine((value, ctx) => {
   if (lossFloorMetrics.has(value.metric) && value.target >= 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["target"], message: "Loss controls use a negative P&L floor, for example -100." });
@@ -41,6 +44,7 @@ const tradeInput = z.object({
   emotionBefore: optionalText(2000),
   emotionDuring: optionalText(2000),
   emotionAfter: optionalText(2000),
+  mt5Ticket: mt5TicketInput,
 });
 
 async function dbOrThrow() {
@@ -53,6 +57,13 @@ async function ownGoal(userId: number, goalId: number) {
   const db = await dbOrThrow();
   const found = await db.select().from(goals).where(and(eq(goals.id, goalId), eq(goals.userId, userId))).limit(1);
   if (!found[0]) throw new Error("That goal is unavailable.");
+  return found[0];
+}
+
+async function ownMt5Connection(userId: number, connectionId: number) {
+  const db = await dbOrThrow();
+  const found = await db.select().from(mt5Connections).where(and(eq(mt5Connections.id, connectionId), eq(mt5Connections.userId, userId))).limit(1);
+  if (!found[0]) throw new Error("That MT5 connection is unavailable.");
   return found[0];
 }
 
@@ -85,9 +96,35 @@ export const goldRouter = router({
       await db.delete(skippedTrades).where(and(eq(skippedTrades.userId, ctx.user.id), eq(skippedTrades.accountId, input.accountId)));
       await db.delete(cashMovements).where(and(eq(cashMovements.userId, ctx.user.id), eq(cashMovements.accountId, input.accountId)));
       await db.delete(goals).where(and(eq(goals.userId, ctx.user.id), eq(goals.accountId, input.accountId)));
+      await db.delete(mt5LivePositions).where(eq(mt5LivePositions.accountId, input.accountId));
+      await db.delete(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId)));
       await db.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
       await db.delete(accounts).where(and(eq(accounts.userId, ctx.user.id), eq(accounts.id, input.accountId)));
       return { success: true, replacementAccountId: replacement.id };
+    }),
+  }),
+  mt5: router({
+    workspace: protectedProcedure.input(accountIdInput).query(({ ctx, input }) => getMt5Workspace(ctx.user.id, input.accountId)),
+    createConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), label: z.string().trim().min(1).max(120) })).mutation(async ({ ctx, input }) => {
+      await getOwnedAccount(ctx.user.id, input.accountId);
+      const db = await dbOrThrow();
+      const existing = await db.select({ id: mt5Connections.id }).from(mt5Connections).where(eq(mt5Connections.accountId, input.accountId)).limit(1);
+      if (existing[0]) throw new Error("This Gold Journal account already has an MT5 connection. Edit or replace it from MT5 Live.");
+      const apiKey = randomBytes(32).toString("base64url");
+      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey, active: true });
+      return { id: Number(inserted[0].insertId) };
+    }),
+    setConnectionActive: protectedProcedure.input(z.object({ connectionId: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
+      const connection = await ownMt5Connection(ctx.user.id, input.connectionId);
+      const db = await dbOrThrow();
+      await db.update(mt5Connections).set({ active: input.active }).where(and(eq(mt5Connections.id, connection.id), eq(mt5Connections.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    deleteConnection: protectedProcedure.input(z.object({ connectionId: z.number().int().positive(), confirmed: z.literal(true) })).mutation(async ({ ctx, input }) => {
+      const connection = await ownMt5Connection(ctx.user.id, input.connectionId);
+      const db = await dbOrThrow();
+      await db.delete(mt5Connections).where(and(eq(mt5Connections.id, connection.id), eq(mt5Connections.userId, ctx.user.id)));
+      return { success: true };
     }),
   }),
   trades: router({
@@ -111,6 +148,10 @@ export const goldRouter = router({
     create: protectedProcedure.input(tradeInput).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
+      if (input.mt5Ticket) {
+        const linked = await db.select({ id: mt5LivePositions.id }).from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, input.accountId), eq(mt5LivePositions.ticket, BigInt(input.mt5Ticket)), eq(mt5LivePositions.status, "CLOSED"))).limit(1);
+        if (!linked[0]) throw new Error("The selected MT5 ticket is not an unjournaled closed position for this account.");
+      }
       const inserted = await db.insert(trades).values({
         userId: ctx.user.id, accountId: input.accountId, tradeDate: new Date(input.tradeDate), session: input.session,
         direction: input.direction, result: input.result, level: input.level, timeframe: input.timeframe,
@@ -119,6 +160,7 @@ export const goldRouter = router({
         tpPlacement: input.tpPlacement, mistake: input.mistake, holdQuality: input.holdQuality, patienceScore: input.patienceScore,
         risk: input.risk?.toFixed(2) ?? null, reward: input.reward?.toFixed(2) ?? null, pnl: input.pnl.toFixed(2),
         notes: input.notes, emotionBefore: input.emotionBefore, emotionDuring: input.emotionDuring, emotionAfter: input.emotionAfter,
+        mt5Ticket: input.mt5Ticket ? BigInt(input.mt5Ticket) : null,
       });
       return { id: Number(inserted[0].insertId) };
     }),
@@ -132,6 +174,7 @@ export const goldRouter = router({
         slPlacement: input.slPlacement, tpPlacement: input.tpPlacement, mistake: input.mistake, holdQuality: input.holdQuality,
         patienceScore: input.patienceScore, risk: input.risk?.toFixed(2) ?? null, reward: input.reward?.toFixed(2) ?? null,
         pnl: input.pnl.toFixed(2), notes: input.notes, emotionBefore: input.emotionBefore, emotionDuring: input.emotionDuring, emotionAfter: input.emotionAfter,
+        mt5Ticket: input.mt5Ticket ? BigInt(input.mt5Ticket) : current.mt5Ticket,
       }).where(and(eq(trades.id, current.id), eq(trades.userId, ctx.user.id)));
       return { success: true };
     }),

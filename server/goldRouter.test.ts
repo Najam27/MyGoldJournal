@@ -81,7 +81,7 @@ describe("Gold Journal protected server workflows", () => {
 
     await expect(caller.accounts.remove({ accountId: 24, confirmed: true })).resolves.toEqual({ success: true, replacementAccountId: 25 });
     expect(mocks.getOwnedAccount).toHaveBeenCalledWith(7, 24);
-    expect(deleteWhere).toHaveBeenCalledTimes(7);
+    expect(deleteWhere).toHaveBeenCalledTimes(9);
   });
 
   it("blocks an anonymous trade mutation before ownership validation", async () => {

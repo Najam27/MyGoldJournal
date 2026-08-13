@@ -7,7 +7,7 @@ function withoutInternalScope<T extends RecordWithInternalScope>(record: T, extr
 }
 
 export function toSafeTrade<T extends RecordWithInternalScope>(trade: T): T & { hasScreenshot: boolean } {
-  const copy = withoutInternalScope(trade, ["screenshotKey", "screenshotName"]);
+  const copy = withoutInternalScope(trade, ["screenshotKey", "screenshotName", "mt5Ticket"]);
   return { ...copy, hasScreenshot: Boolean(trade.screenshotKey) };
 }
 

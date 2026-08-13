@@ -1,4 +1,4 @@
-import { boolean, decimal, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { bigint, boolean, decimal, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -56,10 +56,11 @@ export const trades = mysqlTable(
     emotionAfter: text("emotionAfter"),
     screenshotKey: varchar("screenshotKey", { length: 500 }),
     screenshotName: varchar("screenshotName", { length: 255 }),
+    mt5Ticket: bigint("mt5Ticket", { mode: "bigint" }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
-  table => [index("gj_trades_owner_account_date_idx").on(table.userId, table.accountId, table.tradeDate)],
+  table => [index("gj_trades_owner_account_date_idx").on(table.userId, table.accountId, table.tradeDate), uniqueIndex("gj_trades_mt5_ticket_unique").on(table.accountId, table.mt5Ticket)],
 );
 
 export const cashMovements = mysqlTable(
@@ -198,8 +199,53 @@ export const notificationHistory = mysqlTable(
   table => [index("gj_notification_owner_idx").on(table.userId, table.createdAt)],
 );
 
+export const mt5Connections = mysqlTable(
+  "gj_mt5_connections",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull(),
+    accountId: int("accountId").notNull(),
+    apiKey: varchar("apiKey", { length: 96 }).notNull().unique(),
+    label: varchar("label", { length: 120 }).default("MT5 Connection").notNull(),
+    active: boolean("active").default(true).notNull(),
+    lastPing: timestamp("lastPing"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [uniqueIndex("gj_mt5_connection_account_unique").on(table.accountId), index("gj_mt5_connection_owner_idx").on(table.userId, table.accountId)],
+);
+
+export const mt5LivePositions = mysqlTable(
+  "gj_mt5_live_positions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    accountId: int("accountId").notNull(),
+    ticket: bigint("ticket", { mode: "bigint" }).notNull(),
+    symbol: varchar("symbol", { length: 32 }).notNull(),
+    direction: mysqlEnum("direction", ["BUY", "SELL"]).notNull(),
+    lots: decimal("lots", { precision: 14, scale: 2 }).notNull(),
+    openPrice: decimal("openPrice", { precision: 18, scale: 6 }).notNull(),
+    closePrice: decimal("closePrice", { precision: 18, scale: 6 }),
+    slPrice: decimal("slPrice", { precision: 18, scale: 6 }),
+    tpPrice: decimal("tpPrice", { precision: 18, scale: 6 }),
+    riskUsd: decimal("riskUsd", { precision: 14, scale: 2 }).default("0.00").notNull(),
+    rewardUsd: decimal("rewardUsd", { precision: 14, scale: 2 }).default("0.00").notNull(),
+    rrRatio: decimal("rrRatio", { precision: 14, scale: 2 }).default("0.00").notNull(),
+    floatingPnl: decimal("floatingPnl", { precision: 14, scale: 2 }).default("0.00").notNull(),
+    realizedPnl: decimal("realizedPnl", { precision: 14, scale: 2 }),
+    result: mysqlEnum("result", ["WIN", "LOSS", "BREAK_EVEN"]),
+    openTime: timestamp("openTime").notNull(),
+    closeTime: timestamp("closeTime"),
+    status: mysqlEnum("status", ["OPEN", "CLOSED"]).default("OPEN").notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [uniqueIndex("gj_mt5_live_account_ticket_unique").on(table.accountId, table.ticket), index("gj_mt5_live_account_status_idx").on(table.accountId, table.status, table.updatedAt)],
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
 export type Trade = typeof trades.$inferSelect;
 export type Goal = typeof goals.$inferSelect;
+export type Mt5Connection = typeof mt5Connections.$inferSelect;
+export type Mt5LivePosition = typeof mt5LivePositions.$inferSelect;
