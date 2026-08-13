@@ -135,16 +135,16 @@
 - [x] Add account-isolation, historical-sync, open-to-closed reconciliation, and Trade Log summary regression coverage, then complete full validation.
 - [x] Reconcile stored MT5 positions server-side before protected journal and Trade Log reads, so previously backfilled history cannot depend on a browser-side refresh race.
 - [x] Limit automatically created MT5 journal records to PKT date/session, direction, result, risk, reward, and P&L, leaving all discretionary analysis fields empty for trader completion.
-- [ ] Add direct regression coverage for server-side Trade Log load reconciliation and validate the correction against the connected account.
-- [ ] Accept standard MQL5 dot-formatted timestamps in secure MT5 event validation, then verify the connected terminal can ingest its existing history.
+- [x] Add direct regression coverage for server-side Trade Log load reconciliation and validate the correction against the connected account.
+- [x] Accept standard MQL5 dot-formatted timestamps in secure MT5 event validation, then verify the connected terminal can ingest its existing history.
 - [x] Diagnose and correct the managed EA historical-batch path so all available prior MT5 closes are ingested and automatically journaled.
 - [x] Correct MT5-generated Trade Log session labels to the intended PKT session boundaries, including 4:00 pm PKT as Pre-NY.
 - [x] Remove journal balance and deposit/withdraw actions for MT5-linked Trade Logs, using broker balance and equity as the account balance display instead.
-- [ ] Validate historical MT5 closes, live floating positions, PKT session labels, and linked-account summary behavior with the connected account data.
+- [x] Validate historical MT5 closes, live floating positions, PKT session labels, and linked-account summary behavior with the connected account data.
 - [x] Research and correct all managed-EA historical-deal collection assumptions against the official MQL5 history API behavior.
 - [x] Audit MT5 request delivery, server validation, position deduplication, and Trade Log synchronization for every historical-trade failure mode.
 - [x] Replace the current historical-deal batch logic with a resilient position-level backfill that proves every prior closed position reaches Trade Log exactly once.
 - [x] Add comprehensive MT5 history fault regressions and validate the repaired path against the connected account before publishing.
 - [ ] Verify and resolve the supplied review’s remaining MT5 history risks: index-based live-close detection, position-versus-deal identity clarity, partial/reversal handling, and complete retry behavior.
 - [x] Add server-visible MT5 ingestion diagnostics so rejected historical batches can be identified from the app without relying on terminal logs.
-- [ ] Diagnose and remove the HTTP 400 validation failure emitted by the MT5 historical-batch payload, then display its exact response in the EA log.
+- [x] Diagnose and remove the HTTP 400 validation failure emitted by the MT5 historical-batch payload, then display its exact response in the EA log.
