@@ -38,6 +38,15 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMt5Ingest(app);
+  app.use((error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.path === "/api/mt5" && error instanceof SyntaxError && "body" in error) {
+      const detail = error.message || "Malformed JSON request body.";
+      console.warn("[MT5] malformed JSON payload", detail);
+      res.status(400).json({ ok: false, code: "INVALID_JSON", details: [detail] });
+      return;
+    }
+    next(error);
+  });
   // tRPC API
   app.use(
     "/api/trpc",
