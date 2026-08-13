@@ -152,5 +152,5 @@
 - [x] Ensure published PWA revisions activate reliably so users receive the latest Trade Log bundle rather than a stale service-worker-cached version.
 - [x] Replace the remaining linked-account sidebar journal balance with the connected MT5 broker balance and remove its journal-derived win-rate treatment.
 - [x] Apply the trader-specified PKT session schedule to every auto-synced MT5 trade and backfill already imported journal records.
-- [ ] Diagnose and correct the remaining MT5 broker-balance display discrepancy across linked Trade Log rows, cards, summaries, and sidebar.
-- [ ] Add exact PKT boundary and linked-broker-balance regressions, then validate the corrected connected-account view.
+- [x] Diagnose and correct the remaining MT5 broker-balance display discrepancy across linked Trade Log rows, cards, summaries, and sidebar.
+- [x] Add exact PKT boundary and linked-broker-balance regressions, then validate the corrected connected-account view.
