@@ -26,6 +26,11 @@ describe("MT5 EA ingest", () => {
     expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n, direction: "BUY", floatingPnl: 12.5, symbol: "XAUUSD" }));
   });
 
+  it("accepts the dot-formatted timestamps emitted by MQL5 for live and historical positions", async () => {
+    await expect(processMt5Payload(openPayload(key("mql-date")))).resolves.toEqual({ status: 200, body: { ok: true, event: "open" } });
+    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ openTime: new Date("2026-07-11T09:30:00Z") }));
+  });
+
   it("rejects an unknown API key without touching a connection or writing a position", async () => {
     mocks.getActive.mockResolvedValue(null);
     await expect(processMt5Payload(openPayload(key("unknown")))).resolves.toEqual({ status: 401, body: { ok: false, code: "UNAUTHORIZED" } });

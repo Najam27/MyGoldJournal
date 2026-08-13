@@ -5,7 +5,8 @@ import { completeMt5HistorySync, getActiveMt5Connection, touchMt5Connection, upd
 const numeric = z.coerce.number().finite();
 const ticket = z.union([z.string().regex(/^\d+$/), z.number().int().nonnegative()]).transform(value => BigInt(value));
 const timestamp = z.string().trim().min(8).max(40).transform(value => {
-  const normalized = /[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value.replace(" ", "T")}Z`;
+  const mqlDate = value.replace(/^(\d{4})\.(\d{2})\.(\d{2})/, "$1-$2-$3");
+  const normalized = /[zZ]|[+-]\d\d:?\d\d$/.test(mqlDate) ? mqlDate : `${mqlDate.replace(" ", "T")}Z`;
   const parsed = new Date(normalized);
   if (Number.isNaN(parsed.getTime())) throw new Error("Invalid MT5 timestamp");
   return parsed;

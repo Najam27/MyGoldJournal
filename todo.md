@@ -136,3 +136,4 @@
 - [x] Reconcile stored MT5 positions server-side before protected journal and Trade Log reads, so previously backfilled history cannot depend on a browser-side refresh race.
 - [x] Limit automatically created MT5 journal records to PKT date/session, direction, result, risk, reward, and P&L, leaving all discretionary analysis fields empty for trader completion.
 - [ ] Add direct regression coverage for server-side Trade Log load reconciliation and validate the correction against the connected account.
+- [ ] Accept standard MQL5 dot-formatted timestamps in secure MT5 event validation, then verify the connected terminal can ingest its existing history.
