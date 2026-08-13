@@ -145,3 +145,5 @@
 - [x] Audit MT5 request delivery, server validation, position deduplication, and Trade Log synchronization for every historical-trade failure mode.
 - [x] Replace the current historical-deal batch logic with a resilient position-level backfill that proves every prior closed position reaches Trade Log exactly once.
 - [x] Add comprehensive MT5 history fault regressions and validate the repaired path against the connected account before publishing.
+- [ ] Verify and resolve the supplied review’s remaining MT5 history risks: index-based live-close detection, position-versus-deal identity clarity, partial/reversal handling, and complete retry behavior.
+- [x] Add server-visible MT5 ingestion diagnostics so rejected historical batches can be identified from the app without relying on terminal logs.

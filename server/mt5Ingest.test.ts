@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ getActive: vi.fn(), touch: vi.fn(), open: vi.fn(), close: vi.fn(), summary: vi.fn(), completeHistory: vi.fn() }));
-vi.mock("./mt5Db", () => ({ getActiveMt5Connection: mocks.getActive, touchMt5Connection: mocks.touch, upsertMt5OpenPosition: mocks.open, upsertMt5ClosedPosition: mocks.close, updateMt5AccountSummary: mocks.summary, completeMt5HistorySync: mocks.completeHistory }));
+const mocks = vi.hoisted(() => ({ getActive: vi.fn(), touch: vi.fn(), open: vi.fn(), close: vi.fn(), summary: vi.fn(), completeHistory: vi.fn(), historyAttempt: vi.fn(), historyAccepted: vi.fn(), historyFailure: vi.fn() }));
+vi.mock("./mt5Db", () => ({ getActiveMt5Connection: mocks.getActive, touchMt5Connection: mocks.touch, upsertMt5OpenPosition: mocks.open, upsertMt5ClosedPosition: mocks.close, updateMt5AccountSummary: mocks.summary, completeMt5HistorySync: mocks.completeHistory, recordMt5HistoryAttempt: mocks.historyAttempt, recordMt5HistoryAccepted: mocks.historyAccepted, recordMt5HistoryFailure: mocks.historyFailure }));
 
 import { processMt5Payload } from "./mt5Ingest";
 
@@ -17,6 +17,9 @@ describe("MT5 EA ingest", () => {
     mocks.close.mockResolvedValue(undefined);
     mocks.summary.mockResolvedValue(undefined);
     mocks.completeHistory.mockResolvedValue(undefined);
+    mocks.historyAttempt.mockResolvedValue(undefined);
+    mocks.historyAccepted.mockResolvedValue(undefined);
+    mocks.historyFailure.mockResolvedValue(undefined);
   });
 
   it("authorizes by active API key, touches the connection, and upserts an open position under its account", async () => {
@@ -54,6 +57,8 @@ describe("MT5 EA ingest", () => {
     const closed = { ...base, close_price: 3308, realized_pnl: 168, result: "Win", close_time: "2026-07-11 11:45:00" };
     await expect(processMt5Payload({ event: "history_batch", api_key: key("history"), positions: [closed], complete: true })).resolves.toEqual({ status: 200, body: { ok: true, event: "history_batch", synced: 1, complete: true } });
     expect(mocks.close).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n, result: "WIN" }));
+    expect(mocks.historyAttempt).toHaveBeenCalledWith(44, 1);
+    expect(mocks.historyAccepted).toHaveBeenCalledWith(44, 1, true);
     expect(mocks.completeHistory).toHaveBeenCalledWith(44, 12);
   });
 

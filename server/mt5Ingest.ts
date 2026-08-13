@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { completeMt5HistorySync, getActiveMt5Connection, touchMt5Connection, updateMt5AccountSummary, upsertMt5ClosedPosition, upsertMt5OpenPosition } from "./mt5Db";
+import { completeMt5HistorySync, getActiveMt5Connection, recordMt5HistoryAccepted, recordMt5HistoryAttempt, recordMt5HistoryFailure, touchMt5Connection, updateMt5AccountSummary, upsertMt5ClosedPosition, upsertMt5OpenPosition } from "./mt5Db";
 
 const numeric = z.coerce.number().finite();
 const ticket = z.union([z.string().regex(/^\d+$/), z.number().int().nonnegative()]).transform(value => BigInt(value));
@@ -46,11 +46,18 @@ export async function processMt5Payload(body: unknown) {
     return { status: 200, body: { ok: true, event: "summary" } };
   }
   if (payload.event === "history_batch") {
-    for (const position of payload.positions) {
+    await recordMt5HistoryAttempt(connection.id, payload.positions.length);
+    try {
+      for (const position of payload.positions) {
         await upsertMt5ClosedPosition(connection.userId, connection.accountId, { ticket: position.ticket, symbol: position.symbol, direction: position.direction, lots: position.lots, openPrice: position.open_price, closePrice: position.close_price, slPrice: position.sl_price > 0 ? position.sl_price : null, tpPrice: position.tp_price > 0 ? position.tp_price : null, riskUsd: position.risk_usd, rewardUsd: position.reward_usd, rrRatio: position.rr_ratio, realizedPnl: position.realized_pnl, result: position.result, closeTime: position.close_time, openTime: position.open_time ?? position.close_time });
+      }
+      await recordMt5HistoryAccepted(connection.id, payload.positions.length, payload.complete);
+      if (payload.complete) await completeMt5HistorySync(connection.id, connection.accountId);
+      return { status: 200, body: { ok: true, event: "history_batch", synced: payload.positions.length, complete: payload.complete } };
+    } catch (error) {
+      await recordMt5HistoryFailure(connection.id, error instanceof Error ? error.message : "Unable to store historical positions.");
+      throw error;
     }
-    if (payload.complete) await completeMt5HistorySync(connection.id, connection.accountId);
-    return { status: 200, body: { ok: true, event: "history_batch", synced: payload.positions.length, complete: payload.complete } };
   }
   const shared = {
     ticket: payload.ticket,

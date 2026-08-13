@@ -61,7 +61,7 @@ export async function getMt5Workspace(userId: number, accountId: number) {
   const accountNames = new Map(accountRows.map(account => [account.id, account.name]));
   const journaledTickets = new Set(journalRows.flatMap(row => row.mt5Ticket == null ? [] : [row.mt5Ticket.toString()]));
   return {
-    connections: connections.map(connection => ({ id: connection.id, accountId: connection.accountId, accountName: accountNames.get(connection.accountId) ?? "Trading account", label: connection.label, apiKey: connection.apiKey, active: connection.active, lastPing: connection.lastPing, mt5Login: connection.mt5Login?.toString() ?? null, brokerServer: connection.brokerServer, currency: connection.currency, balance: connection.balance, equity: connection.equity, margin: connection.margin, freeMargin: connection.freeMargin, floatingPnl: connection.floatingPnl, lastHistorySync: connection.lastHistorySync, historySyncedCount: connection.historySyncedCount, createdAt: connection.createdAt })),
+    connections: connections.map(connection => ({ id: connection.id, accountId: connection.accountId, accountName: accountNames.get(connection.accountId) ?? "Trading account", label: connection.label, apiKey: connection.apiKey, active: connection.active, lastPing: connection.lastPing, mt5Login: connection.mt5Login?.toString() ?? null, brokerServer: connection.brokerServer, currency: connection.currency, balance: connection.balance, equity: connection.equity, margin: connection.margin, freeMargin: connection.freeMargin, floatingPnl: connection.floatingPnl, lastHistorySync: connection.lastHistorySync, historySyncedCount: connection.historySyncedCount, lastHistoryAttempt: connection.lastHistoryAttempt, lastHistoryStatus: connection.lastHistoryStatus, lastHistoryMessage: connection.lastHistoryMessage, lastHistoryBatchSize: connection.lastHistoryBatchSize, createdAt: connection.createdAt })),
     openPositions: openPositions.map(position => safePosition(position, journaledTickets)),
     closedPositions: closedPositions.map(position => safePosition(position, journaledTickets)),
   };
@@ -104,7 +104,22 @@ export async function updateMt5AccountSummary(connectionId: number, value: Accou
 export async function completeMt5HistorySync(connectionId: number, accountId: number) {
   const db = await requireDb();
   const rows = await db.select({ total: count() }).from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.status, "CLOSED")));
-  await db.update(mt5Connections).set({ lastHistorySync: new Date(), historySyncedCount: Number(rows[0]?.total ?? 0) }).where(eq(mt5Connections.id, connectionId));
+  await db.update(mt5Connections).set({ lastHistorySync: new Date(), historySyncedCount: Number(rows[0]?.total ?? 0), lastHistoryAttempt: new Date(), lastHistoryStatus: "COMPLETED", lastHistoryMessage: "Historical position scan completed.", lastHistoryBatchSize: 0 }).where(eq(mt5Connections.id, connectionId));
+}
+
+export async function recordMt5HistoryAttempt(connectionId: number, batchSize: number) {
+  const db = await requireDb();
+  await db.update(mt5Connections).set({ lastHistoryAttempt: new Date(), lastHistoryStatus: "RECEIVED", lastHistoryMessage: `Received ${batchSize} historical position${batchSize === 1 ? "" : "s"}.`, lastHistoryBatchSize: batchSize }).where(eq(mt5Connections.id, connectionId));
+}
+
+export async function recordMt5HistoryAccepted(connectionId: number, batchSize: number, complete: boolean) {
+  const db = await requireDb();
+  await db.update(mt5Connections).set({ lastHistoryAttempt: new Date(), lastHistoryStatus: complete ? "COMPLETING" : "ACCEPTED", lastHistoryMessage: complete ? `Accepted final batch of ${batchSize} historical position${batchSize === 1 ? "" : "s"}.` : `Accepted ${batchSize} historical position${batchSize === 1 ? "" : "s"}.`, lastHistoryBatchSize: batchSize }).where(eq(mt5Connections.id, connectionId));
+}
+
+export async function recordMt5HistoryFailure(connectionId: number, message: string) {
+  const db = await requireDb();
+  await db.update(mt5Connections).set({ lastHistoryAttempt: new Date(), lastHistoryStatus: "FAILED", lastHistoryMessage: message.slice(0, 255) }).where(eq(mt5Connections.id, connectionId));
 }
 
 type LiveBase = { ticket: bigint; symbol: string; direction: "BUY" | "SELL"; lots: number; openPrice: number; slPrice: number | null; tpPrice: number | null; riskUsd: number; rewardUsd: number; rrRatio: number; openTime: Date };
