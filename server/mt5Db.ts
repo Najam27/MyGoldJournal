@@ -35,16 +35,20 @@ function safePosition(position: typeof mt5LivePositions.$inferSelect, journaledT
   };
 }
 
-function pktSession(date: Date) {
-  const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Karachi", hour: "2-digit", hour12: false }).format(date));
-  if (hour >= 3 && hour < 5) return "Pre-Asian";
-  if (hour < 8) return "Asian";
-  if (hour < 10) return "Post-Asian";
-  if (hour < 12) return "Pre-London";
-  if (hour < 14) return "London";
-  if (hour < 16) return "Post-London";
-  if (hour < 17) return "Pre-NY";
-  if (hour < 20) return "New York";
+export function pktSession(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date);
+  const hour = Number(parts.find(part => part.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find(part => part.type === "minute")?.value ?? "0");
+  const pktMinute = hour * 60 + minute;
+  if (pktMinute < 3 * 60) return "Post-NY";
+  if (pktMinute >= 3 * 60 && pktMinute < 5 * 60) return "Pre-Asian";
+  if (pktMinute < 8 * 60) return "Asian";
+  if (pktMinute < 10 * 60) return "Post-Asian";
+  if (pktMinute < 12 * 60) return "Pre-London";
+  if (pktMinute < 14 * 60) return "London";
+  if (pktMinute < 16 * 60) return "Post-London";
+  if (pktMinute < 17 * 60) return "Pre-NY";
+  if (pktMinute < 20 * 60) return "New York";
   return "Post-NY";
 }
 
