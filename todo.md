@@ -101,7 +101,7 @@
 - [x] Support creating, editing, enabling, disabling, and deleting any goal, including custom names, goal periods, metric types, comparison rules, targets, and notifications.
 - [x] Automatically calculate real-data goal progress from the selected account’s closed trades and surface risk-first goal insights and notifications without placing or modifying trades.
 - [x] Add goal-management and goal-notification regression coverage, then complete full validation for the redesigned workflow.
-- [ ] Retry physical removal of hidden legacy non-custom goal rows when the external TiDB DNS outage has cleared; legacy rows are already excluded from every journal read.
+- [x] Retry physical removal of hidden legacy non-custom goal rows when the external TiDB DNS outage has cleared; legacy rows are already excluded from every journal read.
 - [x] Remove journal entry IDs, account IDs, owner IDs, screenshot keys, storage filenames, and internal timestamps from the trade-view dialog and every client-visible trade detail surface.
 - [x] Audit the card-style PDF report and all remaining visible journal interfaces for internal IDs, ownership fields, storage keys, signed URLs, or other implementation metadata, then remove any exposure found.
 - [x] Add privacy-regression coverage and complete validation for the metadata-exposure hardening release.
@@ -124,3 +124,4 @@
 - [x] Build an MT5 Live workspace with connection management, setup guidance, live open positions, recent closes, and controlled journal prefill for unjournaled closed trades.
 - [x] Integrate active live positions into the Trade Log without disrupting existing features, and ship the downloadable Gold Journal Expert Advisor file.
 - [x] Add MT5 isolation, API-key, ingest, journal-status, and UI regression coverage, then complete full validation and publish.
+- [x] Fix the missing QueryError recovery icon import that can crash the authenticated error state, then add a regression and validate the repair.
