@@ -82,7 +82,8 @@ createRoot(document.getElementById("root")!).render(
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").then(registration => {
+    navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then(async registration => {
+      await registration.update();
       const notifyUpdate = () => window.dispatchEvent(new Event("gold-journal-update-ready"));
       if (registration.waiting) notifyUpdate();
       registration.addEventListener("updatefound", () => {
