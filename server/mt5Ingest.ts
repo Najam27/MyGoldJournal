@@ -86,7 +86,17 @@ export function registerMt5Ingest(app: Express) {
       res.status(outcome.status).json(outcome.body);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ ok: false, code: "INVALID_PAYLOAD" });
+        const details = error.issues.slice(0, 4).map(issue => `${issue.path.join(".") || "payload"}: ${issue.message}`);
+        const apiKey = typeof req.body?.api_key === "string" ? req.body.api_key : "";
+        if (req.body?.event === "history_batch" && apiKey) {
+          try {
+            const connection = await getActiveMt5Connection(apiKey);
+            if (connection) await recordMt5HistoryFailure(connection.id, `Invalid history payload — ${details.join("; ")}`);
+          } catch {
+            // Keep the original validation response reliable even if diagnostics cannot persist.
+          }
+        }
+        res.status(400).json({ ok: false, code: "INVALID_PAYLOAD", details });
         return;
       }
       console.error("[MT5] ingest failed", error);

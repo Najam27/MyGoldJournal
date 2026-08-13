@@ -147,3 +147,4 @@
 - [x] Add comprehensive MT5 history fault regressions and validate the repaired path against the connected account before publishing.
 - [ ] Verify and resolve the supplied review’s remaining MT5 history risks: index-based live-close detection, position-versus-deal identity clarity, partial/reversal handling, and complete retry behavior.
 - [x] Add server-visible MT5 ingestion diagnostics so rejected historical batches can be identified from the app without relying on terminal logs.
+- [ ] Diagnose and remove the HTTP 400 validation failure emitted by the MT5 historical-batch payload, then display its exact response in the EA log.
