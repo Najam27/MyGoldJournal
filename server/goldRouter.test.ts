@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getOwnedAccount: vi.fn(),
   ownsTrade: vi.fn(),
   storagePut: vi.fn(),
+  syncStoredMt5: vi.fn(),
 }));
 
 vi.mock("./db", () => ({ getDb: mocks.getDb }));
@@ -17,6 +18,7 @@ vi.mock("./goldDb", () => ({
   ownsTrade: mocks.ownsTrade,
 }));
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
+vi.mock("./mt5Db", () => ({ getMt5History: vi.fn(), getMt5Workspace: vi.fn(), syncStoredMt5PositionsToTradeLog: mocks.syncStoredMt5 }));
 
 import { goldRouter } from "./goldRouter";
 
@@ -34,6 +36,17 @@ describe("Gold Journal protected server workflows", () => {
     const caller = goldRouter.createCaller({ user } as any);
     await expect(caller.journal.bootstrap()).resolves.toMatchObject({ id: 12, name: "Primary Account" });
     expect(mocks.ensureAccount).toHaveBeenCalledWith(7);
+  });
+
+  it("reconciles stored MT5 positions before returning an owned journal", async () => {
+    mocks.getOwnedAccount.mockResolvedValue({ id: 12, userId: 7, name: "Primary Account" });
+    mocks.syncStoredMt5.mockResolvedValue(4);
+    mocks.getJournal.mockResolvedValue({ activeAccount: { id: 12 }, trades: [{ id: 1, result: "WIN" }] });
+    const caller = goldRouter.createCaller({ user } as any);
+
+    await expect(caller.journal.get({ accountId: 12 })).resolves.toMatchObject({ activeAccount: { id: 12 }, trades: [{ result: "WIN" }] });
+    expect(mocks.syncStoredMt5).toHaveBeenCalledWith(7, 12);
+    expect(mocks.getJournal).toHaveBeenCalledWith(7, 12);
   });
 
   it("blocks anonymous account mutations before a database call", async () => {
@@ -128,5 +141,25 @@ describe("Gold Journal protected server workflows", () => {
 
     await expect(caller.notifications.recordGoalAlerts({ accountId: 12, alerts: [{ goalId: 89, status: "BREACHED", cycleKey: "DAILY-2026-08-12", message: "Inactive ceiling breached." }, { goalId: 90, status: "MET", cycleKey: "DAILY-2026-08-12", message: "Silent target achieved." }] })).resolves.toEqual({ recorded: 0 });
     expect(values).not.toHaveBeenCalled();
+  });
+
+  it("reconciles stored MT5 positions into only the owned account with an active connection", async () => {
+    mocks.getOwnedAccount.mockResolvedValue({ id: 12, userId: 7 });
+    mocks.getDb.mockResolvedValue({ select: () => limitedRows([{ id: 44 }]) });
+    mocks.syncStoredMt5.mockResolvedValue(3);
+    const caller = goldRouter.createCaller({ user } as any);
+
+    await expect(caller.mt5.syncTradeLog({ accountId: 12 })).resolves.toEqual({ synchronized: 3 });
+    expect(mocks.getOwnedAccount).toHaveBeenCalledWith(7, 12);
+    expect(mocks.syncStoredMt5).toHaveBeenCalledWith(7, 12);
+  });
+
+  it("blocks MT5 Trade Log reconciliation when the requested account is not owned", async () => {
+    mocks.getOwnedAccount.mockRejectedValue(new Error("That trading account is unavailable."));
+    const caller = goldRouter.createCaller({ user } as any);
+
+    await expect(caller.mt5.syncTradeLog({ accountId: 99 })).rejects.toThrow("unavailable");
+    expect(mocks.syncStoredMt5).not.toHaveBeenCalled();
+    expect(mocks.getDb).not.toHaveBeenCalled();
   });
 });

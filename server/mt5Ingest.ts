@@ -46,7 +46,7 @@ export async function processMt5Payload(body: unknown) {
   }
   if (payload.event === "history_batch") {
     for (const position of payload.positions) {
-      await upsertMt5ClosedPosition(connection.accountId, { ticket: position.ticket, symbol: position.symbol, direction: position.direction, lots: position.lots, openPrice: position.open_price, closePrice: position.close_price, slPrice: position.sl_price > 0 ? position.sl_price : null, tpPrice: position.tp_price > 0 ? position.tp_price : null, riskUsd: position.risk_usd, rewardUsd: position.reward_usd, rrRatio: position.rr_ratio, realizedPnl: position.realized_pnl, result: position.result, closeTime: position.close_time, openTime: position.open_time ?? position.close_time });
+        await upsertMt5ClosedPosition(connection.userId, connection.accountId, { ticket: position.ticket, symbol: position.symbol, direction: position.direction, lots: position.lots, openPrice: position.open_price, closePrice: position.close_price, slPrice: position.sl_price > 0 ? position.sl_price : null, tpPrice: position.tp_price > 0 ? position.tp_price : null, riskUsd: position.risk_usd, rewardUsd: position.reward_usd, rrRatio: position.rr_ratio, realizedPnl: position.realized_pnl, result: position.result, closeTime: position.close_time, openTime: position.open_time ?? position.close_time });
     }
     if (payload.complete) await completeMt5HistorySync(connection.id, connection.accountId);
     return { status: 200, body: { ok: true, event: "history_batch", synced: payload.positions.length, complete: payload.complete } };
@@ -64,10 +64,10 @@ export async function processMt5Payload(body: unknown) {
     rrRatio: payload.rr_ratio,
   };
   if (payload.event === "open") {
-    await upsertMt5OpenPosition(connection.accountId, { ...shared, floatingPnl: payload.floating_pnl, openTime: payload.open_time });
+    await upsertMt5OpenPosition(connection.userId, connection.accountId, { ...shared, floatingPnl: payload.floating_pnl, openTime: payload.open_time });
     return { status: 200, body: { ok: true, event: "open" } };
   }
-  await upsertMt5ClosedPosition(connection.accountId, { ...shared, closePrice: payload.close_price, realizedPnl: payload.realized_pnl, result: payload.result, closeTime: payload.close_time, openTime: payload.open_time ?? payload.close_time });
+  await upsertMt5ClosedPosition(connection.userId, connection.accountId, { ...shared, closePrice: payload.close_price, realizedPnl: payload.realized_pnl, result: payload.result, closeTime: payload.close_time, openTime: payload.open_time ?? payload.close_time });
   return { status: 200, body: { ok: true, event: "close" } };
 }
 

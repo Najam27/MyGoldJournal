@@ -24,4 +24,14 @@ describe("TradeLogWithViewer", () => {
     ["Journal entry ID", "Account ID", "Owner ID", "Screenshot file", "Screenshot key", "Saved", "Last updated", "gold-journal/21/trades/8.png", "entry.png"].forEach(value => expect(screen.queryByText(value)).toBeNull());
     expect(screen.getByAltText(/Trade screenshot/i)).toBeTruthy();
   });
+
+  it("shows broker account metrics and confirms that active MT5 positions are logged automatically", () => {
+    render(<TradeLogWithViewer stats={{ balance: 5000, winRate: 0, wins: 0, losses: 0, pnl: 0, total: 0 }} trades={[]} allTrades={[]} pagination={{ page: 1, pageSize: 12, total: 0, pageCount: 1 }} listLoading={false} account={{ name: "Primary" }} dangerGoals={[]} hasMt5Connection mt5Syncing mt5Summary={{ balance: "5120.50", equity: "5168.25", floatingPnl: "47.75", currency: "USD" }} mt5LivePositions={[{ ticket: "91001", symbol: "XAUUSD", direction: "BUY", floatingPnl: "47.75" }]} search="" resultFilter="ALL" setSearch={vi.fn()} setResultFilter={vi.fn()} onPage={vi.fn()} onNew={vi.fn()} onDuplicate={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onCash={vi.fn()} onCsv={vi.fn()} onExcel={vi.fn()} onPdf={vi.fn()} onClear={vi.fn()} />);
+    expect(screen.getByText("MT5 balance")).toBeTruthy();
+    expect(screen.getByText("MT5 equity")).toBeTruthy();
+    expect(screen.getByText("MT5 floating P&L")).toBeTruthy();
+    expect(screen.getByText("Synchronizing Trade Log…")).toBeTruthy();
+    expect(screen.getByText("Logged automatically · updates with MT5")).toBeTruthy();
+    expect(screen.getByText("XAUUSD")).toBeTruthy();
+  });
 });

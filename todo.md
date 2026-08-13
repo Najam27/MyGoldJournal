@@ -129,3 +129,10 @@
 - [x] Add an initial and on-demand historical closed-trade backfill from MT5 with ticket-based upsert deduplication and no automatic journal-trade creation.
 - [x] Show MT5 account metrics, historical closed trades, sync/backfill status, and a user-controlled refresh in the MT5 Live workspace.
 - [x] Update the managed Expert Advisor and setup guidance for historical sync, then add regression coverage and complete full validation.
+- [x] Automatically mirror the selected MT5 connection's historical closed positions and active open positions into the assigned Gold Journal Trade Log with stable ticket-based deduplication.
+- [x] Automatically reconcile synchronized MT5 positions from open to closed in existing journal entries, preserving the trader's non-MT5 journal fields where applicable.
+- [x] Show the connected broker balance, equity, floating P&L, and MT5 synchronization state directly in the Trade Log summary without creating duplicate cash movements.
+- [x] Add account-isolation, historical-sync, open-to-closed reconciliation, and Trade Log summary regression coverage, then complete full validation.
+- [x] Reconcile stored MT5 positions server-side before protected journal and Trade Log reads, so previously backfilled history cannot depend on a browser-side refresh race.
+- [x] Limit automatically created MT5 journal records to PKT date/session, direction, result, risk, reward, and P&L, leaving all discretionary analysis fields empty for trader completion.
+- [ ] Add direct regression coverage for server-side Trade Log load reconciliation and validate the correction against the connected account.

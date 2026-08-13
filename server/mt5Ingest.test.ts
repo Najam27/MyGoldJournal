@@ -11,7 +11,7 @@ const openPayload = (api_key = key("open")) => ({ event: "open" as const, api_ke
 describe("MT5 EA ingest", () => {
   beforeEach(() => {
     Object.values(mocks).forEach(mock => mock.mockReset());
-    mocks.getActive.mockResolvedValue({ id: 44, accountId: 12, active: true });
+    mocks.getActive.mockResolvedValue({ id: 44, userId: 77, accountId: 12, active: true });
     mocks.touch.mockResolvedValue(undefined);
     mocks.open.mockResolvedValue(undefined);
     mocks.close.mockResolvedValue(undefined);
@@ -23,7 +23,7 @@ describe("MT5 EA ingest", () => {
     await expect(processMt5Payload(openPayload())).resolves.toEqual({ status: 200, body: { ok: true, event: "open" } });
     expect(mocks.getActive).toHaveBeenCalledWith(key("open"));
     expect(mocks.touch).toHaveBeenCalledWith(44);
-    expect(mocks.open).toHaveBeenCalledWith(12, expect.objectContaining({ ticket: 123456789n, direction: "BUY", floatingPnl: 12.5, symbol: "XAUUSD" }));
+    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n, direction: "BUY", floatingPnl: 12.5, symbol: "XAUUSD" }));
   });
 
   it("rejects an unknown API key without touching a connection or writing a position", async () => {
@@ -36,7 +36,7 @@ describe("MT5 EA ingest", () => {
   it("stores a close event as a closed position with realized P&L and a normalized result", async () => {
     const { floating_pnl, open_time, ...base } = openPayload(key("close"));
     await expect(processMt5Payload({ ...base, event: "close", close_price: 3308, realized_pnl: 168, result: "Win", close_time: "2026-07-11 11:45:00", open_time })).resolves.toEqual({ status: 200, body: { ok: true, event: "close" } });
-    expect(mocks.close).toHaveBeenCalledWith(12, expect.objectContaining({ ticket: 123456789n, result: "WIN", realizedPnl: 168, closePrice: 3308 }));
+    expect(mocks.close).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n, result: "WIN", realizedPnl: 168, closePrice: 3308 }));
   });
 
   it("stores MT5 account balance, equity, margin, and floating P&L only after resolving the API key", async () => {
@@ -48,7 +48,7 @@ describe("MT5 EA ingest", () => {
     const { floating_pnl, ...base } = openPayload(key("history"));
     const closed = { ...base, close_price: 3308, realized_pnl: 168, result: "Win", close_time: "2026-07-11 11:45:00" };
     await expect(processMt5Payload({ event: "history_batch", api_key: key("history"), positions: [closed], complete: true })).resolves.toEqual({ status: 200, body: { ok: true, event: "history_batch", synced: 1, complete: true } });
-    expect(mocks.close).toHaveBeenCalledWith(12, expect.objectContaining({ ticket: 123456789n, result: "WIN" }));
+    expect(mocks.close).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n, result: "WIN" }));
     expect(mocks.completeHistory).toHaveBeenCalledWith(44, 12);
   });
 

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { accounts, cashMovements, dailyPlans, goals, mt5Connections, mt5LivePositions, notificationHistory, notificationSettings, optionLists, skippedTrades, trades } from "../drizzle/schema";
 import { getDb } from "./db";
 import { ensureAccount, getJournal, getOwnedAccount, ownsTrade } from "./goldDb";
-import { getMt5History, getMt5Workspace } from "./mt5Db";
+import { getMt5History, getMt5Workspace, syncStoredMt5PositionsToTradeLog } from "./mt5Db";
 import { toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 import { protectedProcedure, router } from "./_core/trpc";
 import { storageGetSignedUrl, storagePut } from "./storage";
@@ -70,7 +70,11 @@ async function ownMt5Connection(userId: number, connectionId: number) {
 export const goldRouter = router({
   journal: router({
     bootstrap: protectedProcedure.query(({ ctx }) => ensureAccount(ctx.user.id)),
-    get: protectedProcedure.input(z.object({ accountId: z.number().int().positive().optional() })).query(({ ctx, input }) => getJournal(ctx.user.id, input.accountId)),
+    get: protectedProcedure.input(z.object({ accountId: z.number().int().positive().optional() })).query(async ({ ctx, input }) => {
+      const account = await getOwnedAccount(ctx.user.id, input.accountId);
+      await syncStoredMt5PositionsToTradeLog(ctx.user.id, account.id);
+      return getJournal(ctx.user.id, account.id);
+    }),
   }),
   accounts: router({
     create: protectedProcedure.input(z.object({ name: z.string().trim().min(1).max(100), startingBalance: z.number().min(0).default(0) })).mutation(async ({ ctx, input }) => {
@@ -106,6 +110,13 @@ export const goldRouter = router({
   mt5: router({
     workspace: protectedProcedure.input(accountIdInput).query(({ ctx, input }) => getMt5Workspace(ctx.user.id, input.accountId)),
     history: protectedProcedure.input(accountIdInput.extend({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(50).default(20) })).query(({ ctx, input }) => getMt5History(ctx.user.id, input.accountId, input.page, input.pageSize)),
+    syncTradeLog: protectedProcedure.input(accountIdInput).mutation(async ({ ctx, input }) => {
+      await getOwnedAccount(ctx.user.id, input.accountId);
+      const connection = await dbOrThrow().then(db => db.select({ id: mt5Connections.id }).from(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId), eq(mt5Connections.active, true))).limit(1));
+      if (!connection[0]) throw new Error("No active MT5 connection is available for this journal account.");
+      const synchronized = await syncStoredMt5PositionsToTradeLog(ctx.user.id, input.accountId);
+      return { synchronized };
+    }),
     createConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), label: z.string().trim().min(1).max(120) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
@@ -131,6 +142,7 @@ export const goldRouter = router({
   trades: router({
     list: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(50).default(12), search: z.string().trim().max(160).optional().default(""), result: z.enum(["WIN", "LOSS", "BREAK_EVEN", "OPEN"]).optional() })).query(async ({ ctx, input }) => {
       const account = await getOwnedAccount(ctx.user.id, input.accountId);
+      await syncStoredMt5PositionsToTradeLog(ctx.user.id, account.id);
       const db = await dbOrThrow();
       let where = and(eq(trades.userId, ctx.user.id), eq(trades.accountId, account.id));
       if (input.result) where = and(where, eq(trades.result, input.result));
