@@ -14,14 +14,17 @@ const timestamp = z.string().trim().min(8).max(40).transform(value => {
 const direction = z.enum(["Buy", "Sell", "BUY", "SELL"]).transform(value => value.toUpperCase() as "BUY" | "SELL");
 const result = z.enum(["Win", "Loss", "Break-even", "WIN", "LOSS", "BREAK_EVEN"]).transform(value => value === "Win" || value === "WIN" ? "WIN" : value === "Loss" || value === "LOSS" ? "LOSS" : "BREAK_EVEN" as const);
 
-const base = z.object({ api_key: z.string().trim().min(24).max(96), ticket, symbol: z.string().trim().min(1).max(32), direction, lots: numeric.min(0), open_price: numeric, sl_price: numeric.optional().default(0), tp_price: numeric.optional().default(0), risk_usd: numeric.min(0), reward_usd: numeric.min(0), rr_ratio: numeric.min(0) });
-const closedPosition = base.extend({ close_price: numeric, realized_pnl: numeric, result, close_time: timestamp, open_time: timestamp.optional() });
+const positionBase = z.object({ ticket, symbol: z.string().trim().min(1).max(32), direction, lots: numeric.min(0), open_price: numeric, sl_price: numeric.optional().default(0), tp_price: numeric.optional().default(0), risk_usd: numeric.min(0), reward_usd: numeric.min(0), rr_ratio: numeric.min(0) });
+const base = positionBase.extend({ api_key: z.string().trim().min(24).max(96) });
+const closedFields = z.object({ close_price: numeric, realized_pnl: numeric, result, close_time: timestamp, open_time: timestamp.optional() });
+const closedPosition = positionBase.merge(closedFields);
+const closedEvent = base.merge(closedFields).extend({ event: z.literal("close") });
 export const mt5Payload = z.discriminatedUnion("event", [
   z.object({ event: z.literal("ping"), api_key: z.string().trim().min(24).max(96) }),
   z.object({ event: z.literal("summary"), api_key: z.string().trim().min(24).max(96), mt5_login: ticket, broker_server: z.string().trim().min(1).max(160), currency: z.string().trim().min(1).max(16), balance: numeric, equity: numeric, margin: numeric.min(0), free_margin: numeric, floating_pnl: numeric }),
   base.extend({ event: z.literal("open"), floating_pnl: numeric, open_time: timestamp }),
-  closedPosition.extend({ event: z.literal("close") }),
-  z.object({ event: z.literal("history_batch"), api_key: z.string().trim().min(24).max(50), positions: z.array(closedPosition).max(50), complete: z.boolean().default(false) }),
+  closedEvent,
+  z.object({ event: z.literal("history_batch"), api_key: z.string().trim().min(24).max(96), positions: z.array(closedPosition).max(50), complete: z.boolean().default(false) }),
 ]);
 
 const requests = new Map<string, { startedAt: number; count: number }>();

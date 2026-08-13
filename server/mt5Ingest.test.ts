@@ -53,8 +53,8 @@ describe("MT5 EA ingest", () => {
   });
 
   it("upserts a bounded historical closed-trade batch under the resolved account and marks a completed backfill", async () => {
-    const { floating_pnl, ...base } = openPayload(key("history"));
-    const closed = { ...base, close_price: 3308, realized_pnl: 168, result: "Win", close_time: "2026-07-11 11:45:00" };
+    const { floating_pnl, api_key: _nestedApiKeyMustBeAbsent, ...position } = openPayload(key("history"));
+    const closed = { ...position, close_price: 3308, realized_pnl: 168, result: "Win", close_time: "2026-07-11 11:45:00" };
     await expect(processMt5Payload({ event: "history_batch", api_key: key("history"), positions: [closed], complete: true })).resolves.toEqual({ status: 200, body: { ok: true, event: "history_batch", synced: 1, complete: true } });
     expect(mocks.close).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n, result: "WIN" }));
     expect(mocks.historyAttempt).toHaveBeenCalledWith(44, 1);
