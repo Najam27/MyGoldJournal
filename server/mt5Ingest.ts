@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { getActiveMt5Connection, touchMt5Connection, upsertMt5ClosedPosition, upsertMt5OpenPosition } from "./mt5Db";
+import { completeMt5HistorySync, getActiveMt5Connection, touchMt5Connection, updateMt5AccountSummary, upsertMt5ClosedPosition, upsertMt5OpenPosition } from "./mt5Db";
 
 const numeric = z.coerce.number().finite();
 const ticket = z.union([z.string().regex(/^\d+$/), z.number().int().nonnegative()]).transform(value => BigInt(value));
@@ -14,10 +14,13 @@ const direction = z.enum(["Buy", "Sell", "BUY", "SELL"]).transform(value => valu
 const result = z.enum(["Win", "Loss", "Break-even", "WIN", "LOSS", "BREAK_EVEN"]).transform(value => value === "Win" || value === "WIN" ? "WIN" : value === "Loss" || value === "LOSS" ? "LOSS" : "BREAK_EVEN" as const);
 
 const base = z.object({ api_key: z.string().trim().min(24).max(96), ticket, symbol: z.string().trim().min(1).max(32), direction, lots: numeric.min(0), open_price: numeric, sl_price: numeric.optional().default(0), tp_price: numeric.optional().default(0), risk_usd: numeric.min(0), reward_usd: numeric.min(0), rr_ratio: numeric.min(0) });
+const closedPosition = base.extend({ close_price: numeric, realized_pnl: numeric, result, close_time: timestamp, open_time: timestamp.optional() });
 export const mt5Payload = z.discriminatedUnion("event", [
   z.object({ event: z.literal("ping"), api_key: z.string().trim().min(24).max(96) }),
+  z.object({ event: z.literal("summary"), api_key: z.string().trim().min(24).max(96), mt5_login: ticket, broker_server: z.string().trim().min(1).max(160), currency: z.string().trim().min(1).max(16), balance: numeric, equity: numeric, margin: numeric.min(0), free_margin: numeric, floating_pnl: numeric }),
   base.extend({ event: z.literal("open"), floating_pnl: numeric, open_time: timestamp }),
-  base.extend({ event: z.literal("close"), close_price: numeric, realized_pnl: numeric, result, close_time: timestamp, open_time: timestamp.optional() }),
+  closedPosition.extend({ event: z.literal("close") }),
+  z.object({ event: z.literal("history_batch"), api_key: z.string().trim().min(24).max(50), positions: z.array(closedPosition).max(50), complete: z.boolean().default(false) }),
 ]);
 
 const requests = new Map<string, { startedAt: number; count: number }>();
@@ -37,6 +40,17 @@ export async function processMt5Payload(body: unknown) {
   if (!connection) return { status: 401, body: { ok: false, code: "UNAUTHORIZED" } };
   await touchMt5Connection(connection.id);
   if (payload.event === "ping") return { status: 200, body: { ok: true, event: "ping" } };
+  if (payload.event === "summary") {
+    await updateMt5AccountSummary(connection.id, { mt5Login: payload.mt5_login, brokerServer: payload.broker_server, currency: payload.currency, balance: payload.balance, equity: payload.equity, margin: payload.margin, freeMargin: payload.free_margin, floatingPnl: payload.floating_pnl });
+    return { status: 200, body: { ok: true, event: "summary" } };
+  }
+  if (payload.event === "history_batch") {
+    for (const position of payload.positions) {
+      await upsertMt5ClosedPosition(connection.accountId, { ticket: position.ticket, symbol: position.symbol, direction: position.direction, lots: position.lots, openPrice: position.open_price, closePrice: position.close_price, slPrice: position.sl_price > 0 ? position.sl_price : null, tpPrice: position.tp_price > 0 ? position.tp_price : null, riskUsd: position.risk_usd, rewardUsd: position.reward_usd, rrRatio: position.rr_ratio, realizedPnl: position.realized_pnl, result: position.result, closeTime: position.close_time, openTime: position.open_time ?? position.close_time });
+    }
+    if (payload.complete) await completeMt5HistorySync(connection.id, connection.accountId);
+    return { status: 200, body: { ok: true, event: "history_batch", synced: payload.positions.length, complete: payload.complete } };
+  }
   const shared = {
     ticket: payload.ticket,
     symbol: payload.symbol,

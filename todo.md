@@ -125,3 +125,7 @@
 - [x] Integrate active live positions into the Trade Log without disrupting existing features, and ship the downloadable Gold Journal Expert Advisor file.
 - [x] Add MT5 isolation, API-key, ingest, journal-status, and UI regression coverage, then complete full validation and publish.
 - [x] Fix the missing QueryError recovery icon import that can crash the authenticated error state, then add a regression and validate the repair.
+- [x] Add secure MT5 account-summary ingestion for balance, equity, margin, free margin, currency, and current floating P&L.
+- [x] Add an initial and on-demand historical closed-trade backfill from MT5 with ticket-based upsert deduplication and no automatic journal-trade creation.
+- [x] Show MT5 account metrics, historical closed trades, sync/backfill status, and a user-controlled refresh in the MT5 Live workspace.
+- [x] Update the managed Expert Advisor and setup guidance for historical sync, then add regression coverage and complete full validation.

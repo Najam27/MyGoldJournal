@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ getActive: vi.fn(), touch: vi.fn(), open: vi.fn(), close: vi.fn() }));
-vi.mock("./mt5Db", () => ({ getActiveMt5Connection: mocks.getActive, touchMt5Connection: mocks.touch, upsertMt5OpenPosition: mocks.open, upsertMt5ClosedPosition: mocks.close }));
+const mocks = vi.hoisted(() => ({ getActive: vi.fn(), touch: vi.fn(), open: vi.fn(), close: vi.fn(), summary: vi.fn(), completeHistory: vi.fn() }));
+vi.mock("./mt5Db", () => ({ getActiveMt5Connection: mocks.getActive, touchMt5Connection: mocks.touch, upsertMt5OpenPosition: mocks.open, upsertMt5ClosedPosition: mocks.close, updateMt5AccountSummary: mocks.summary, completeMt5HistorySync: mocks.completeHistory }));
 
 import { processMt5Payload } from "./mt5Ingest";
 
@@ -15,6 +15,8 @@ describe("MT5 EA ingest", () => {
     mocks.touch.mockResolvedValue(undefined);
     mocks.open.mockResolvedValue(undefined);
     mocks.close.mockResolvedValue(undefined);
+    mocks.summary.mockResolvedValue(undefined);
+    mocks.completeHistory.mockResolvedValue(undefined);
   });
 
   it("authorizes by active API key, touches the connection, and upserts an open position under its account", async () => {
@@ -35,6 +37,19 @@ describe("MT5 EA ingest", () => {
     const { floating_pnl, open_time, ...base } = openPayload(key("close"));
     await expect(processMt5Payload({ ...base, event: "close", close_price: 3308, realized_pnl: 168, result: "Win", close_time: "2026-07-11 11:45:00", open_time })).resolves.toEqual({ status: 200, body: { ok: true, event: "close" } });
     expect(mocks.close).toHaveBeenCalledWith(12, expect.objectContaining({ ticket: 123456789n, result: "WIN", realizedPnl: 168, closePrice: 3308 }));
+  });
+
+  it("stores MT5 account balance, equity, margin, and floating P&L only after resolving the API key", async () => {
+    await expect(processMt5Payload({ event: "summary", api_key: key("summary"), mt5_login: "90123456", broker_server: "Broker-Live", currency: "USD", balance: 10000, equity: 10042.5, margin: 250, free_margin: 9792.5, floating_pnl: 42.5 })).resolves.toEqual({ status: 200, body: { ok: true, event: "summary" } });
+    expect(mocks.summary).toHaveBeenCalledWith(44, expect.objectContaining({ mt5Login: 90123456n, balance: 10000, equity: 10042.5, floatingPnl: 42.5, brokerServer: "Broker-Live" }));
+  });
+
+  it("upserts a bounded historical closed-trade batch under the resolved account and marks a completed backfill", async () => {
+    const { floating_pnl, ...base } = openPayload(key("history"));
+    const closed = { ...base, close_price: 3308, realized_pnl: 168, result: "Win", close_time: "2026-07-11 11:45:00" };
+    await expect(processMt5Payload({ event: "history_batch", api_key: key("history"), positions: [closed], complete: true })).resolves.toEqual({ status: 200, body: { ok: true, event: "history_batch", synced: 1, complete: true } });
+    expect(mocks.close).toHaveBeenCalledWith(12, expect.objectContaining({ ticket: 123456789n, result: "WIN" }));
+    expect(mocks.completeHistory).toHaveBeenCalledWith(44, 12);
   });
 
   it("limits a single API key to five events per second", async () => {

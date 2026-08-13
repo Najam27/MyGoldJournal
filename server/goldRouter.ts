@@ -5,7 +5,7 @@ import { z } from "zod";
 import { accounts, cashMovements, dailyPlans, goals, mt5Connections, mt5LivePositions, notificationHistory, notificationSettings, optionLists, skippedTrades, trades } from "../drizzle/schema";
 import { getDb } from "./db";
 import { ensureAccount, getJournal, getOwnedAccount, ownsTrade } from "./goldDb";
-import { getMt5Workspace } from "./mt5Db";
+import { getMt5History, getMt5Workspace } from "./mt5Db";
 import { toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 import { protectedProcedure, router } from "./_core/trpc";
 import { storageGetSignedUrl, storagePut } from "./storage";
@@ -105,6 +105,7 @@ export const goldRouter = router({
   }),
   mt5: router({
     workspace: protectedProcedure.input(accountIdInput).query(({ ctx, input }) => getMt5Workspace(ctx.user.id, input.accountId)),
+    history: protectedProcedure.input(accountIdInput.extend({ page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(50).default(20) })).query(({ ctx, input }) => getMt5History(ctx.user.id, input.accountId, input.page, input.pageSize)),
     createConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), label: z.string().trim().min(1).max(120) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
