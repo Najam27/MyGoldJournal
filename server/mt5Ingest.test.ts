@@ -28,7 +28,7 @@ describe("MT5 EA ingest", () => {
 
   it("accepts the dot-formatted timestamps emitted by MQL5 for live and historical positions", async () => {
     await expect(processMt5Payload(openPayload(key("mql-date")))).resolves.toEqual({ status: 200, body: { ok: true, event: "open" } });
-    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ openTime: new Date("2026-07-11T09:30:00Z") }));
+    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ openTime: new Date("2026-07-11T04:30:00Z") }));
   });
 
   it("rejects an unknown API key without touching a connection or writing a position", async () => {

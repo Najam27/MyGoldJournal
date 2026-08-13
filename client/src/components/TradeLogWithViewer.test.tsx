@@ -33,5 +33,8 @@ describe("TradeLogWithViewer", () => {
     expect(screen.getByText("Synchronizing Trade Log…")).toBeTruthy();
     expect(screen.getByText("Logged automatically · updates with MT5")).toBeTruthy();
     expect(screen.getByText("XAUUSD")).toBeTruthy();
+    expect(screen.queryByText("Journal balance")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Deposit" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Withdraw" })).toBeNull();
   });
 });
