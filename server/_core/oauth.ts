@@ -16,7 +16,7 @@ export function registerOAuthRoutes(app: Express) {
     const state = getQueryParam(req, "state");
 
     if (!code || !state) {
-      res.status(400).json({ error: "Authentication could not be completed." });
+      res.status(400).json({ error: "code and state are required" });
       return;
     }
 
@@ -26,7 +26,7 @@ export function registerOAuthRoutes(app: Express) {
     const { nonce } = decodeOAuthState(state);
     const expectedNonce = parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE];
     if (!nonce || nonce !== expectedNonce) {
-      res.status(403).json({ error: "Authentication could not be completed." });
+      res.status(403).json({ error: "invalid oauth state" });
       return;
     }
     res.clearCookie(OAUTH_STATE_COOKIE, { path: "/", secure: true, sameSite: "none" });
@@ -36,7 +36,7 @@ export function registerOAuthRoutes(app: Express) {
       const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
 
       if (!userInfo.openId) {
-        res.status(400).json({ error: "Authentication could not be completed." });
+        res.status(400).json({ error: "openId missing from user info" });
         return;
       }
 
@@ -59,7 +59,7 @@ export function registerOAuthRoutes(app: Express) {
       res.redirect(302, "/");
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "Authentication could not be completed." });
+      res.status(500).json({ error: "OAuth callback failed" });
     }
   });
 }

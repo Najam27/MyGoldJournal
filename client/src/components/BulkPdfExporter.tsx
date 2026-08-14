@@ -19,7 +19,7 @@ function setPageBackground(pdf: jsPDF) { pdf.setFillColor(...colors.bg); pdf.rec
 function fetchImageData(url: string) { return fetch(url).then(response => { if (!response.ok) throw new Error("Screenshot unavailable"); return response.blob(); }).then(blob => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); })); }
 function sectionTitle(pdf: jsPDF, label: string, title: string) { pdf.setTextColor(...colors.gold); pdf.setFontSize(8); pdf.text(label.toUpperCase(), page.margin, 18); pdf.setTextColor(...colors.text); pdf.setFontSize(20); pdf.text(title, page.margin, 29); }
 function addWrapped(pdf: jsPDF, value: string, x: number, y: number, width: number, lineHeight = 4.5) { const lines = pdf.splitTextToSize(value || "—", width); pdf.text(lines, x, y); return y + lines.length * lineHeight; }
-export function pdfTradeCardFields(trade: any) { return [["Session", trade.session], ["Level", trade.level || "—"], ["Timeframe", trade.timeframe || "—"], ["Setup", trade.setupQuality || "—"], ["Risk", formatMoney(trade.risk)], ["Reward", formatMoney(trade.reward)], ["Realized R:R", formatRr(trade.risk, trade.pnl)], ["P&L", formatMoney(trade.pnl)]] as const; }
+export function pdfTradeCardFields(trade: any) { return [["Session", trade.session], ["Level", trade.level || "—"], ["Timeframe", trade.timeframe || "—"], ["Setup", trade.setupQuality || "—"], ["Risk", formatMoney(trade.risk)], ["Reward", formatMoney(trade.reward)], ["R:R", formatRr(trade.risk, trade.reward)], ["P&L", formatMoney(trade.pnl)]] as const; }
 
 export function BulkPdfExporter() {
   const { isAuthenticated } = useAuth();
@@ -30,7 +30,6 @@ export function BulkPdfExporter() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [busy, setBusy] = useState(false);
-  const utils = trpc.useUtils();
   useEffect(() => subscribeSelectedAccount(setAccountId), []);
   useEffect(() => { const openExporter = () => setOpen(true); window.addEventListener("gold-journal:bulk-pdf", openExporter); return () => window.removeEventListener("gold-journal:bulk-pdf", openExporter); }, []);
   const account = journal.data?.activeAccount;
@@ -45,12 +44,6 @@ export function BulkPdfExporter() {
     if (!account || !selected.length) { toast.error("No trades match this export range."); return; }
     setBusy(true);
     try {
-      const evidenceUrls = new Map<number, string | null>();
-      for (let offset = 0; offset < selected.length; offset += 50) {
-        const batch = selected.slice(offset, offset + 50).map((trade: any) => trade.id);
-        const evidence = await utils.trades.screenshots.fetch({ tradeIds: batch });
-        Object.entries(evidence.urls).forEach(([tradeId, url]) => evidenceUrls.set(Number(tradeId), url));
-      }
       const pdf = new jsPDF({ unit: "mm", format: "a4" });
       setPageBackground(pdf);
       sectionTitle(pdf, "Gold Journal · Private performance report", account.name);
@@ -62,7 +55,7 @@ export function BulkPdfExporter() {
       pdf.setTextColor(...colors.muted); pdf.setFontSize(9); addWrapped(pdf, "This report contains trade cards, linked screenshot evidence when available, performance analysis, and a daily P&L calendar for the selected account only.", page.margin, 103, 165);
 
       for (let index = 0; index < selected.length; index += 1) {
-        const trade: any = { ...selected[index], screenshotUrl: evidenceUrls.get(selected[index].id) ?? null };
+        const trade: any = selected[index];
         pdf.addPage(); setPageBackground(pdf);
         sectionTitle(pdf, `Trade card ${String(index + 1).padStart(2, "0")} / ${String(selected.length).padStart(2, "0")}`, `${formatDate(trade.tradeDate)} · ${trade.direction} · ${trade.result.replace("_", " ")}`);
         pdf.setFillColor(...colors.panel); pdf.roundedRect(page.margin, 40, 180, 47, 4, 4, "F");

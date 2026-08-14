@@ -1,6 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
 import { accounts, cashMovements, dailyPlans, goals, skippedTrades, trades } from "../drizzle/schema";
 import { getDb } from "./db";
+import { storageGetSignedUrl } from "./storage";
+import { hydrateSignedScreenshots } from "./journalScreenshots";
 import { toSafeAccount, toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 
 async function requireDb() {
@@ -39,10 +41,11 @@ export async function getJournal(userId: number, accountId?: number) {
     db.select().from(skippedTrades).where(and(eq(skippedTrades.userId, userId), eq(skippedTrades.accountId, activeAccount.id))).orderBy(desc(skippedTrades.tradeDate)),
     db.select().from(dailyPlans).where(and(eq(dailyPlans.userId, userId), eq(dailyPlans.accountId, activeAccount.id))).orderBy(desc(dailyPlans.planDate)),
   ]);
+  const ownedTrades = await hydrateSignedScreenshots(tradeList, storageGetSignedUrl);
   return {
     activeAccount: toSafeAccount(activeAccount),
     accounts: accountList.map(toSafeAccount),
-    trades: tradeList.map(toSafeTrade),
+    trades: ownedTrades.map(toSafeTrade),
     cashMovements: movementList.map(toSafeJournalRecord),
     goals: goalList.map(toSafeJournalRecord),
     skippedTrades: skippedList.map(toSafeJournalRecord),

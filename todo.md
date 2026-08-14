@@ -158,20 +158,9 @@
 - [x] Shift and reclassify existing auto-imported MT5 history from broker UTC+3 to PKT UTC+5 using the requested session schedule.
 - [x] Remove the misleading repeated current MT5 balance from individual historical Trade Log rows while retaining broker balance and equity in the summary and sidebar.
 - [x] Add broker-timezone and per-row-balance regressions, verify the connected account, and publish the correction.
-- [x] Correct live MT5 open and close timestamps so every broker UTC+3 event converts to PKT UTC+5 before journal date and session assignment, without relying on a historical-only backfill.
-- [x] Repair Trade Log edit-date validation so a recently closed MT5 trade can be saved without a false future-date rejection caused by timezone parsing.
-- [x] Make the first and every available Level / confluence option reliably selectable in the New Trade and Edit Trade dialogs.
-- [x] Derive displayed R:R from risk and realized P&L for closed trades, while preserving reward as the planned target field.
-- [x] Add focused regressions and complete validation for the repaired live MT5 ingestion and trade-editor workflows.
-- [x] Audit and replace remaining static or example-driven widget values with account-scoped database or live-MT5 data, while preserving safe empty and loading states.
-- [x] Normalize shared light/dark semantic tokens across application widgets, native form controls, dialogs, tables, floating controls, and account surfaces.
-- [x] Reposition the Manage accounts control above fixed/third-party bottom overlays and verify it remains visible and reachable at desktop and mobile breakpoints.
-- [x] Add focused dynamic-data, theme-compatibility, and responsive-control regressions, then complete production validation.
-- [x] Audit server-side schema validation, HTML/script rejection, generic error behavior, and rejected-request monitoring across every protected form and MT5 payload.
-- [x] Document the Manus OAuth authentication boundary, audit for password-handling or account-enumeration risks, and harden applicable authentication error responses without replacing the managed identity provider.
-- [x] Scan current source, build output, and reachable repository history for accidental secrets; remediate confirmed exposure without reporting sensitive values.
-- [x] Audit dependency vulnerabilities and safely apply compatible package updates, documenting findings and unresolved manual-review items.
-- [x] Harden screenshot uploads with server-side signature/content validation, size limits, isolated content types, and documented deletion constraints.
-- [x] Audit and improve response compression, database bulk-write paths, external-dependency timeouts/circuit breaking, and optimistic mutation behavior where applicable.
-- [x] Audit and improve query pagination, search debouncing, signed screenshot loading, aggregation placement, and service-worker cache/update behavior.
-- [x] Add regression coverage, complete end-to-end validation, and publish a documented thirteen-control hardening record.
+- [x] Correct the MT5 Live historical-sync summary so its displayed closed-position count always matches the visible account-owned history rows.
+- [x] Color weekly P&L calendar summaries green for profit, red for loss, and neutral for flat results with accessible light/dark contrast.
+- [x] Improve Plan & Execution search with a debounced account-scoped query and clear no-results state.
+- [x] Improve Plan & Execution saved entries with explicit add, edit, and confirmed remove controls that preserve account ownership and refresh state reliably.
+- [x] Add focused Plan & Execution workflow regressions and complete validation for search plus saved-entry management.
+- [x] Ensure Plan & Execution entry and adherence checklists show active user-defined Trading rules, with a clear add-rule action instead of an empty 0/0 protocol state.

@@ -4,19 +4,6 @@
 
 import { ENV } from "./_core/env";
 
-export async function fetchWithDeadline(url: string | URL, init: RequestInit, timeoutMs: number, fetchImpl: typeof fetch = fetch) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetchImpl(url, { ...init, signal: controller.signal });
-  } catch (error) {
-    if (controller.signal.aborted) throw new Error("Storage request timed out.");
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
   const forgeKey = ENV.forgeApiKey;
@@ -53,9 +40,9 @@ export async function storagePut(
   const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
   presignUrl.searchParams.set("path", key);
 
-  const presignResp = await fetchWithDeadline(presignUrl, {
+  const presignResp = await fetch(presignUrl, {
     headers: { Authorization: `Bearer ${forgeKey}` },
-  }, 10_000);
+  });
 
   if (!presignResp.ok) {
     const msg = await presignResp.text().catch(() => presignResp.statusText);
@@ -71,11 +58,11 @@ export async function storagePut(
       ? new Blob([data], { type: contentType })
       : new Blob([data as any], { type: contentType });
 
-  const uploadResp = await fetchWithDeadline(s3Url, {
+  const uploadResp = await fetch(s3Url, {
     method: "PUT",
     headers: { "Content-Type": contentType },
     body: blob,
-  }, 20_000);
+  });
 
   if (!uploadResp.ok) {
     throw new Error(`Storage upload to S3 failed (${uploadResp.status})`);
@@ -96,9 +83,9 @@ export async function storageGetSignedUrl(relKey: string): Promise<string> {
   const getUrl = new URL("v1/storage/presign/get", forgeUrl + "/");
   getUrl.searchParams.set("path", key);
 
-  const resp = await fetchWithDeadline(getUrl, {
+  const resp = await fetch(getUrl, {
     headers: { Authorization: `Bearer ${forgeKey}` },
-  }, 10_000);
+  });
 
   if (!resp.ok) {
     const msg = await resp.text().catch(() => resp.statusText);

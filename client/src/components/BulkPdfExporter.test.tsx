@@ -5,24 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock("@/lib/accountSelection", () => ({ getSelectedAccountId: () => 3, subscribeSelectedAccount: () => () => {} }));
-vi.mock("@/lib/trpc", () => ({
-  trpc: {
-    journal: {
-      get: {
-        useQuery: () => ({
-          data: {
-            activeAccount: { id: 3, name: "Funded Gold" },
-            trades: [
-              { id: 1, accountId: 3, tradeDate: new Date("2026-08-02T12:00:00Z"), pnl: "12", result: "WIN" },
-              { id: 2, accountId: 9, tradeDate: new Date("2026-08-03T12:00:00Z"), pnl: "99", result: "WIN" },
-            ],
-          },
-        }),
-      },
-    },
-    useUtils: () => ({ trades: { screenshots: { fetch: vi.fn().mockResolvedValue({ urls: {} }) } } }),
-  },
-}));
+vi.mock("@/lib/trpc", () => ({ trpc: { journal: { get: { useQuery: () => ({ data: { activeAccount: { id: 3, name: "Funded Gold" }, trades: [{ id: 1, accountId: 3, tradeDate: new Date("2026-08-02T12:00:00Z"), pnl: "12", result: "WIN" }, { id: 2, accountId: 9, tradeDate: new Date("2026-08-03T12:00:00Z"), pnl: "99", result: "WIN" }] } }) } } } }));
 vi.mock("@/components/ui/button", () => ({ Button: ({ children, ...props }: any) => <button {...props}>{children}</button> }));
 vi.mock("@/components/ui/input", () => ({ Input: (props: any) => <input {...props} /> }));
 vi.mock("@/components/ui/dialog", () => ({ Dialog: ({ children }: any) => <>{children}</>, DialogContent: ({ children }: any) => <div>{children}</div>, DialogDescription: ({ children }: any) => <p>{children}</p>, DialogHeader: ({ children }: any) => <div>{children}</div>, DialogTitle: ({ children }: any) => <h2>{children}</h2> }));
@@ -44,8 +27,7 @@ describe("BulkPdfExporter", () => {
 
   it("allows only trader-facing execution fields into every exported trade card", () => {
     const fields = pdfTradeCardFields({ id: 7, userId: 21, accountId: 3, screenshotKey: "gold-journal/21/trades/7.png", screenshotName: "private-entry.png", createdAt: new Date(), updatedAt: new Date(), session: "London", level: "RBS", timeframe: "15m", setupQuality: "A", risk: 20, reward: 80, pnl: 60 });
-    expect(fields.map(([label]) => label)).toEqual(["Session", "Level", "Timeframe", "Setup", "Risk", "Reward", "Realized R:R", "P&L"]);
-    expect(fields.find(([label]) => label === "Realized R:R")?.[1]).toBe("1 : 3.00");
+    expect(fields.map(([label]) => label)).toEqual(["Session", "Level", "Timeframe", "Setup", "Risk", "Reward", "R:R", "P&L"]);
     expect(JSON.stringify(fields)).not.toContain("gold-journal/");
     expect(JSON.stringify(fields)).not.toContain("private-entry.png");
   });

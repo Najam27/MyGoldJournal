@@ -5,17 +5,6 @@ import type { TrpcContext } from "./context";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
-  errorFormatter({ shape, error }) {
-    if (error.code === "BAD_REQUEST") {
-      console.warn("[Validation] Rejected protected submission", { path: shape.data.path, code: error.code });
-      return {
-        ...shape,
-        message: "Your submission could not be accepted.",
-        data: { ...shape.data, zodError: null },
-      };
-    }
-    return shape;
-  },
 });
 
 export const router = t.router;

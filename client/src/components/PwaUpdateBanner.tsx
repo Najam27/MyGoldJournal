@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -15,19 +15,9 @@ export function PwaUpdateBanner() {
 
   const update = async () => {
     const registration = await navigator.serviceWorker.getRegistration();
-    if (!registration?.waiting) {
-      window.location.reload();
-      return;
-    }
-    let reloaded = false;
-    const reload = () => {
-      if (reloaded) return;
-      reloaded = true;
-      window.location.reload();
-    };
-    navigator.serviceWorker.addEventListener("controllerchange", reload, { once: true });
-    registration.waiting.postMessage({ type: "SKIP_WAITING" });
-    window.setTimeout(reload, 3_000);
+    registration?.waiting?.postMessage({ type: "SKIP_WAITING" });
+    navigator.serviceWorker.addEventListener("controllerchange", () => window.location.reload(), { once: true });
+    window.location.reload();
   };
 
   return <div className="pwa-update-banner"><RefreshCcw size={15} /><span>New version available.</span><Button size="sm" onClick={update}>Update now</Button><button onClick={() => setReady(false)} aria-label="Dismiss update"><X size={15} /></button></div>;

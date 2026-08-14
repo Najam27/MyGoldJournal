@@ -14,6 +14,8 @@ describe("PnlCalendarWithWeeks", () => {
     render(<PnlCalendarWithWeeks trades={[{ tradeDate: new Date("2026-08-03T12:00:00"), pnl: "100" }, { tradeDate: new Date("2026-08-06T12:00:00"), pnl: "-20" }]} />);
     expect(screen.getAllByText(/ending/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("$80.00").length).toBeGreaterThan(1);
+    expect(document.querySelector(".week-summary-card.profit")).toBeTruthy();
+    expect(document.querySelector(".week-summary-card.flat")).toBeTruthy();
     expect(screen.getByRole("button", { name: /03\/08\/2026: \$100\.00, 1 trades/i }).className).toContain("gain");
   });
 });

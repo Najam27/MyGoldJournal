@@ -1,10 +1,7 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import { accounts, mt5Connections, mt5LivePositions, trades } from "../drizzle/schema";
-import { createHash } from "crypto";
 import { getDb } from "./db";
 import { getOwnedAccount } from "./goldDb";
-
-export const hashMt5ApiKey = (value: string) => createHash("sha256").update(value).digest("base64url");
 
 async function requireDb() {
   const db = await getDb();
@@ -68,7 +65,7 @@ export async function getMt5Workspace(userId: number, accountId: number) {
   const accountNames = new Map(accountRows.map(account => [account.id, account.name]));
   const journaledTickets = new Set(journalRows.flatMap(row => row.mt5Ticket == null ? [] : [row.mt5Ticket.toString()]));
   return {
-    connections: connections.map(connection => ({ id: connection.id, accountId: connection.accountId, accountName: accountNames.get(connection.accountId) ?? "Trading account", label: connection.label, apiKeyConfigured: Boolean(connection.apiKey), active: connection.active, lastPing: connection.lastPing, mt5Login: connection.mt5Login?.toString() ?? null, brokerServer: connection.brokerServer, currency: connection.currency, balance: connection.balance, equity: connection.equity, margin: connection.margin, freeMargin: connection.freeMargin, floatingPnl: connection.floatingPnl, lastHistorySync: connection.lastHistorySync, historySyncedCount: connection.historySyncedCount, lastHistoryAttempt: connection.lastHistoryAttempt, lastHistoryStatus: connection.lastHistoryStatus, lastHistoryMessage: connection.lastHistoryMessage, lastHistoryBatchSize: connection.lastHistoryBatchSize, createdAt: connection.createdAt })),
+    connections: connections.map(connection => ({ id: connection.id, accountId: connection.accountId, accountName: accountNames.get(connection.accountId) ?? "Trading account", label: connection.label, apiKey: connection.apiKey, active: connection.active, lastPing: connection.lastPing, mt5Login: connection.mt5Login?.toString() ?? null, brokerServer: connection.brokerServer, currency: connection.currency, balance: connection.balance, equity: connection.equity, margin: connection.margin, freeMargin: connection.freeMargin, floatingPnl: connection.floatingPnl, lastHistorySync: connection.lastHistorySync, historySyncedCount: connection.historySyncedCount, lastHistoryAttempt: connection.lastHistoryAttempt, lastHistoryStatus: connection.lastHistoryStatus, lastHistoryMessage: connection.lastHistoryMessage, lastHistoryBatchSize: connection.lastHistoryBatchSize, createdAt: connection.createdAt })),
     openPositions: openPositions.map(position => safePosition(position, journaledTickets)),
     closedPositions: closedPositions.map(position => safePosition(position, journaledTickets)),
   };
@@ -92,17 +89,8 @@ export async function getMt5History(userId: number, accountId: number, page: num
 
 export async function getActiveMt5Connection(apiKey: string) {
   const db = await requireDb();
-  const hashedKey = hashMt5ApiKey(apiKey);
-  const hashedRows = await db.select().from(mt5Connections).where(and(eq(mt5Connections.apiKey, hashedKey), eq(mt5Connections.active, true))).limit(1);
-  if (hashedRows[0]) return hashedRows[0];
-
-  // Existing connections were stored before browser-secret hardening. Accept
-  // their current EA request once, then replace the stored raw token with its
-  // verifier so no browser route can return a usable secret thereafter.
-  const legacyRows = await db.select().from(mt5Connections).where(and(eq(mt5Connections.apiKey, apiKey), eq(mt5Connections.active, true))).limit(1);
-  if (!legacyRows[0]) return null;
-  await db.update(mt5Connections).set({ apiKey: hashedKey }).where(eq(mt5Connections.id, legacyRows[0].id));
-  return { ...legacyRows[0], apiKey: hashedKey };
+  const rows = await db.select().from(mt5Connections).where(and(eq(mt5Connections.apiKey, apiKey), eq(mt5Connections.active, true))).limit(1);
+  return rows[0] ?? null;
 }
 
 export async function touchMt5Connection(connectionId: number) {
