@@ -17,6 +17,8 @@ describe("TradeLogWithViewer", () => {
     render(<TradeLogWithViewer stats={{ balance: 100, winRate: 100, wins: 1, losses: 0, pnl: 100, total: 1 }} trades={[trade]} allTrades={[trade]} pagination={{ page: 1, pageSize: 12, total: 1, pageCount: 1 }} listLoading={false} account={{ name: "Primary" }} dangerGoals={[]} search="" resultFilter="ALL" setSearch={vi.fn()} setResultFilter={vi.fn()} onPage={vi.fn()} onNew={vi.fn()} onDuplicate={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} onCash={vi.fn()} onCsv={vi.fn()} onExcel={vi.fn()} onPdf={vi.fn()} onClear={vi.fn()} />);
     fireEvent.click(screen.getByLabelText(/View trade from/i));
     expect(screen.getByText("Trade card")).toBeTruthy();
+    expect(screen.getByText("Realized R:R")).toBeTruthy();
+    expect(screen.getAllByText("1 : 5.00")).toHaveLength(2);
     expect(screen.getByText("Waited for confirmation")).toBeTruthy();
     expect(screen.getAllByText("Aligned").length).toBeGreaterThan(1);
     expect(screen.getByText("Below swing")).toBeTruthy();
@@ -46,5 +48,6 @@ describe("TradeLogWithViewer", () => {
     fireEvent.click(screen.getByLabelText(/View trade from/i));
     expect(screen.queryByText("Running balance")).toBeNull();
     expect(screen.getByText("Current MT5 balance")).toBeTruthy();
+    expect(screen.getAllByText("1 : 0.74")).toHaveLength(2);
   });
 });

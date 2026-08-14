@@ -158,3 +158,8 @@
 - [x] Shift and reclassify existing auto-imported MT5 history from broker UTC+3 to PKT UTC+5 using the requested session schedule.
 - [x] Remove the misleading repeated current MT5 balance from individual historical Trade Log rows while retaining broker balance and equity in the summary and sidebar.
 - [x] Add broker-timezone and per-row-balance regressions, verify the connected account, and publish the correction.
+- [x] Correct live MT5 open and close timestamps so every broker UTC+3 event converts to PKT UTC+5 before journal date and session assignment, without relying on a historical-only backfill.
+- [x] Repair Trade Log edit-date validation so a recently closed MT5 trade can be saved without a false future-date rejection caused by timezone parsing.
+- [x] Make the first and every available Level / confluence option reliably selectable in the New Trade and Edit Trade dialogs.
+- [x] Derive displayed R:R from risk and realized P&L for closed trades, while preserving reward as the planned target field.
+- [x] Add focused regressions and complete validation for the repaired live MT5 ingestion and trade-editor workflows.

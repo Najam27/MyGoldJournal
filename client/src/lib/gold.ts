@@ -7,7 +7,7 @@ export function formatDate(value: Date | string | number | null | undefined) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Karachi", day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
 }
 
 export function formatMoney(value: number | string | null | undefined) {
@@ -15,11 +15,25 @@ export function formatMoney(value: number | string | null | undefined) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(numeric);
 }
 
-export function formatRr(risk: number | string | null | undefined, reward: number | string | null | undefined) {
+export function formatRr(risk: number | string | null | undefined, realizedPnl: number | string | null | undefined) {
   const riskValue = Number(risk);
-  const rewardValue = Number(reward);
-  if (!Number.isFinite(riskValue) || !Number.isFinite(rewardValue) || riskValue <= 0) return "—";
-  return `1 : ${(rewardValue / riskValue).toFixed(2)}`;
+  const pnlValue = Number(realizedPnl);
+  if (!Number.isFinite(riskValue) || !Number.isFinite(pnlValue) || riskValue <= 0) return "—";
+  return `1 : ${(pnlValue / riskValue).toFixed(2)}`;
+}
+
+export function pktDateInput(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const value = (part: Intl.DateTimeFormatPartTypes) => parts.find(item => item.type === part)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
+export function pktDateInputToTimestamp(value: string) {
+  return new Date(`${value}T12:00:00+05:00`).getTime();
+}
+
+export function isFuturePktTradeDate(value: string, now = new Date()) {
+  return value > pktDateInput(now);
 }
 
 export function getPktSession(date = new Date()) {
@@ -39,4 +53,3 @@ export function toNumber(value: unknown) {
   const result = Number(value);
   return Number.isFinite(result) ? result : 0;
 }
-

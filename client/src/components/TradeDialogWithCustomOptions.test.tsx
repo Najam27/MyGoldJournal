@@ -17,7 +17,7 @@ describe("TradeDialogWithCustomOptions", () => {
   afterEach(() => cleanup());
 
   it("saves reusable multi-select strategy, execution, and behavior values for the open trade", async () => {
-    const form = { tradeDate: "2026-08-12", session: "London", direction: "BUY", result: "WIN", level: "", timeframe: "15m", setupQuality: "A", executionType: "Manual Direct", marketCondition: "", confirmationType: "", patienceScore: "3", risk: "", reward: "", pnl: "", notes: "", emotionBefore: "", emotionDuring: "", emotionAfter: "" };
+    const form = { tradeDate: "2026-08-12", session: "London", direction: "BUY", result: "WIN", level: "", timeframe: "15m", setupQuality: "A", executionType: "Manual Direct", marketCondition: "", confirmationType: "", patienceScore: "3", risk: "1", reward: "152.50", pnl: "97.60", notes: "", emotionBefore: "", emotionDuring: "", emotionAfter: "" };
     const setForm = vi.fn();
     const props = { open: true, setOpen: vi.fn(), setForm, editing: undefined, onSave: vi.fn(), pending: false, screenshot: undefined, setScreenshot: vi.fn(), progress: 0 };
     const { rerender } = render(<TradeDialogWithCustomOptions {...props} form={form} />);
@@ -27,6 +27,9 @@ describe("TradeDialogWithCustomOptions", () => {
     expect(screen.getByText("Mistake / rule-break tags")).toBeTruthy();
     expect(screen.getByText("Hold quality")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Saved level" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "SBR/TJL1" })).toBeTruthy();
+    expect(screen.getByText("REALIZED R:R")).toBeTruthy();
+    expect(screen.getByText("1 : 97.60")).toBeTruthy();
     ["FOMO", "Revenge", "Overtrading", "Oversize"].forEach(tag => expect(screen.getByRole("button", { name: tag })).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: "FOMO" }));
     expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ mistake: "FOMO" }));
@@ -39,6 +42,11 @@ describe("TradeDialogWithCustomOptions", () => {
     expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ mistake: "FOMO | Ignored news" }));
     fireEvent.click(screen.getByRole("button", { name: "Saved level" }));
     expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ level: "Saved level" }));
+    fireEvent.click(screen.getByRole("button", { name: "SBR/TJL1" }));
+    expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ level: "SBR/TJL1" }));
+    rerender(<TradeDialogWithCustomOptions {...props} form={{ ...form, level: "SBR/TJL1" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "SBR/TJL1" }));
+    expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ level: "" }));
     rerender(<TradeDialogWithCustomOptions {...props} form={{ ...form, level: "Saved level" }} />);
     fireEvent.change(screen.getByLabelText("Add custom Level option"), { target: { value: "Custom zone" } });
     fireEvent.click(screen.getByLabelText("Save custom Level option"));

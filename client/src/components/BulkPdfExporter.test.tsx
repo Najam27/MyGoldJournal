@@ -27,7 +27,8 @@ describe("BulkPdfExporter", () => {
 
   it("allows only trader-facing execution fields into every exported trade card", () => {
     const fields = pdfTradeCardFields({ id: 7, userId: 21, accountId: 3, screenshotKey: "gold-journal/21/trades/7.png", screenshotName: "private-entry.png", createdAt: new Date(), updatedAt: new Date(), session: "London", level: "RBS", timeframe: "15m", setupQuality: "A", risk: 20, reward: 80, pnl: 60 });
-    expect(fields.map(([label]) => label)).toEqual(["Session", "Level", "Timeframe", "Setup", "Risk", "Reward", "R:R", "P&L"]);
+    expect(fields.map(([label]) => label)).toEqual(["Session", "Level", "Timeframe", "Setup", "Risk", "Reward", "Realized R:R", "P&L"]);
+    expect(fields.find(([label]) => label === "Realized R:R")?.[1]).toBe("1 : 3.00");
     expect(JSON.stringify(fields)).not.toContain("gold-journal/");
     expect(JSON.stringify(fields)).not.toContain("private-entry.png");
   });

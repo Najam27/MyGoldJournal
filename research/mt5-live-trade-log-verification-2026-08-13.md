@@ -9,3 +9,15 @@ The final table column was verified as **MT5 balance** and each displayed row us
 The same authenticated Trade Log was reviewed in light theme. Text, navigation, table values, controls, result badges, and MT5 broker metrics remained legible. The shared sidebar showed **MT5 balance $4,888.25** with **Equity $4,888.25**, while the table and summary cards retained the same broker values. The displayed imported sessions used the corrected PKT labels, including Post-London and Pre-Asian.
 
 The authenticated dark-theme Trade Log was then reviewed using the supported `?theme=dark` preference. The sidebar, MT5 balance/equity/floating-P&L cards, P&L outcomes, table headers, session labels, controls, and action icons remained readable against dark surfaces. No contrast or overflow defect was found in the reviewed desktop Trade Log state.
+
+After the broker UTC+3 correction was published and propagated, the authenticated Trade Log was reviewed again. The table no longer showed an MT5 balance column on each historical row; balance and equity remained available in the summary cards and sidebar. The corrected imported session labels appeared as **Pre-NY** for the former Post-London trade and **Asian** for the former Pre-Asian trades, consistent with the broker UTC+3 to PKT UTC+5 conversion.
+
+## Live timestamp and editor repair — 2026-08-14
+
+The subsequent terminal report identified that a legacy EA payload without an explicit timezone was still parsed as PKT rather than its broker UTC+3 clock. This explained why a broker-side 03:35–03:41 trade, which occurred at 05:35–05:41 PKT, was displayed two hours behind and classified as Pre-Asian. The ingest parser now treats a timezone-less MQL5 timestamp as UTC+3; explicit `+03:00` timestamps from EA v1.13 remain preserved. Therefore both EA v1.13 and an earlier installed EA build now produce PKT-correct live open, close, and history events.
+
+The seven stored positions for the connected account were reconciled once using the same two-hour correction, and their mirrored Trade Log entries were rebuilt from the corrected MT5 timestamps. The reported 05:41 PKT closed position now has a stored UTC time of 00:41, displays as **14/08/2026**, and is classified as **Asian**. The same reconciliation returned the earlier overnight positions to Asian and the daytime position to Pre-NY.
+
+The trade editor was also repaired. Multi-select fields are no longer nested in HTML labels, and the token parser now retains slashes inside level names. The first built-in level, **SBR/TJL1**, can be selected and removed just like every other chip. Trade edits compare date-only values in PKT and persist a PKT-noon timestamp, eliminating the false future-date rejection around midnight. R:R now shows the realized value derived from risk and P&L in the editor, Trade Log, trade card, MT5 Live, and PDF report; the planned reward remains visible as its own field.
+
+Validation passed after the repair: **32 test files / 81 tests**, TypeScript validation, production build, and service-worker syntax validation.

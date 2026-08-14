@@ -6,7 +6,10 @@ const numeric = z.coerce.number().finite();
 const ticket = z.union([z.string().regex(/^\d+$/), z.number().int().nonnegative()]).transform(value => BigInt(value));
 const timestamp = z.string().trim().min(8).max(40).transform(value => {
   const mqlDate = value.replace(/^(\d{4})\.(\d{2})\.(\d{2})/, "$1-$2-$3");
-  const normalized = /[zZ]|[+-]\d\d:?\d\d$/.test(mqlDate) ? mqlDate : `${mqlDate.replace(" ", "T")}+05:00`;
+  // MT5's legacy payload has no timezone designator but its terminal clock is
+  // broker time (UTC+3). New EA versions send +03:00 explicitly; preserving
+  // the same fallback keeps older terminals correct on every live event too.
+  const normalized = /[zZ]|[+-]\d\d:?\d\d$/.test(mqlDate) ? mqlDate : `${mqlDate.replace(" ", "T")}+03:00`;
   const parsed = new Date(normalized);
   if (Number.isNaN(parsed.getTime())) throw new Error("Invalid MT5 timestamp");
   return parsed;

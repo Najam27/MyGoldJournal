@@ -19,7 +19,7 @@ function setPageBackground(pdf: jsPDF) { pdf.setFillColor(...colors.bg); pdf.rec
 function fetchImageData(url: string) { return fetch(url).then(response => { if (!response.ok) throw new Error("Screenshot unavailable"); return response.blob(); }).then(blob => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob); })); }
 function sectionTitle(pdf: jsPDF, label: string, title: string) { pdf.setTextColor(...colors.gold); pdf.setFontSize(8); pdf.text(label.toUpperCase(), page.margin, 18); pdf.setTextColor(...colors.text); pdf.setFontSize(20); pdf.text(title, page.margin, 29); }
 function addWrapped(pdf: jsPDF, value: string, x: number, y: number, width: number, lineHeight = 4.5) { const lines = pdf.splitTextToSize(value || "—", width); pdf.text(lines, x, y); return y + lines.length * lineHeight; }
-export function pdfTradeCardFields(trade: any) { return [["Session", trade.session], ["Level", trade.level || "—"], ["Timeframe", trade.timeframe || "—"], ["Setup", trade.setupQuality || "—"], ["Risk", formatMoney(trade.risk)], ["Reward", formatMoney(trade.reward)], ["R:R", formatRr(trade.risk, trade.reward)], ["P&L", formatMoney(trade.pnl)]] as const; }
+export function pdfTradeCardFields(trade: any) { return [["Session", trade.session], ["Level", trade.level || "—"], ["Timeframe", trade.timeframe || "—"], ["Setup", trade.setupQuality || "—"], ["Risk", formatMoney(trade.risk)], ["Reward", formatMoney(trade.reward)], ["Realized R:R", formatRr(trade.risk, trade.pnl)], ["P&L", formatMoney(trade.pnl)]] as const; }
 
 export function BulkPdfExporter() {
   const { isAuthenticated } = useAuth();
