@@ -52,4 +52,18 @@ describe("TradeDialogWithCustomOptions", () => {
     fireEvent.click(screen.getByText("Trending"));
     expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ marketCondition: "Trending" }));
   });
+
+  it("keeps fresh manual Direction and Result on explicit disabled prompts", () => {
+    const form = { tradeDate: "2026-08-12", session: "London", direction: "", result: "", level: "", timeframe: "", setupQuality: "", executionType: "", marketCondition: "", confirmationType: "", patienceScore: "", risk: "", reward: "", pnl: "", notes: "", emotionBefore: "", emotionDuring: "", emotionAfter: "" };
+    const setForm = vi.fn();
+    render(<TradeDialogWithCustomOptions open setOpen={vi.fn()} form={form} setForm={setForm} editing={undefined} onSave={vi.fn()} pending={false} screenshot={undefined} setScreenshot={vi.fn()} progress={0} />);
+    const direction = screen.getByLabelText("Direction", { exact: true }) as HTMLSelectElement;
+    const result = screen.getByLabelText("Result", { exact: true }) as HTMLSelectElement;
+    expect(direction.value).toBe("");
+    expect(result.value).toBe("");
+    expect(screen.getByRole("option", { name: "Select direction" })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("option", { name: "Select result" })).toHaveProperty("disabled", true);
+    fireEvent.change(direction, { target: { value: "SELL" } });
+    expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ direction: "SELL" }));
+  });
 });

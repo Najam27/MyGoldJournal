@@ -167,3 +167,4 @@
 - [x] Correct manual New Trade session prefill to derive the exact current Pakistan Standard Time session rather than the browser-local hour.
 - [ ] Remove hard-coded Skip reason and Outcome defaults from the manual Missed Trades form so each opportunity is recorded from trader-entered facts.
 - [x] Remove the remaining hard-coded New Trade direction, result, timeframe, quality, execution, and patience defaults so manual entries start only with an auto-detected PKT session.
+- [x] Add explicit blank Direction and Result choices in the live reusable New Trade dialog so browser-native first-option selection cannot bypass the required-choice guard.
