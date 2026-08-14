@@ -36,11 +36,17 @@ The corrected `defaultTrade()` factory now supplies only the current PKT session
 | Fresh manual trade | Direction, result, timeframe, quality, execution type, patience, risk/reward/P&L, and notes are blank | Passed |
 | Incomplete manual save | Direction and result must be selected before mutation | Implemented in the client submit guard |
 
+The live reusable dialog now also contains disabled **Select direction** and **Select result** choices. Production bundle inspection confirmed that these prompt options are present in the published JavaScript, so a browser cannot silently render BUY and WIN as selected facts when the underlying fresh form is intentionally blank.
+
 ## Responsive and theme review
 
 The development shell was captured at the required **375 × 812**, **768 × 1024**, **1280 × 720**, and **1600 × 1000** viewports. These non-authenticated captures verified the responsive loading and recovery shell. The active authenticated browser was used for populated desktop view checks and the full light/dark contrast review because the local preview does not inherit the protected browser session.
 
 The populated Trade Log, Plan & Execution, Goals, AI Mentor, Options, and New Trade dialog were inspected in light mode. Options and New Trade were also inspected in dark mode, alongside the earlier dark-mode review of Trade Log, MT5 Live, Goals, Calendar, Plan & Execution, and AI Mentor. No new contrast, clipping, or inaccessible action issue was found in the reviewed surfaces.
+
+The latest light-theme shell was additionally captured at **375 × 812** and **768 × 1024**. The phone state retained a reachable menu, theme control, add action, loading status, and floating utility control without visible horizontal overflow. The tablet state retained a readable Trade Log header and top actions. Both captures were unauthenticated loading states; they confirm shell layout only and do not replace the remaining protected populated-view breakpoint audit.
+
+The same light-theme loading shell was captured at **1280 × 720** and **1600 × 1000**. At both widths, the header hierarchy and workspace controls stayed aligned with large empty-state space available for the protected journal content. The account-management floating control remained reachable at the lower-right edge. These are shell-level findings only; the remaining tracker item continues to require populated protected views at all four breakpoints.
 
 > The protected mobile/tablet review remains a tracked follow-up because only one browser viewport was available for the authenticated session, and creating additional account data or changing browser configuration would fall outside this non-mutating review.
 
@@ -56,4 +62,4 @@ The populated Trade Log, Plan & Execution, Goals, AI Mentor, Options, and New Tr
 
 ## Tracked follow-up
 
-The skipped-trade form still contains example reason and outcome values. This was documented in `todo.md` as a distinct manual-entry consistency task. The compact one-line implementation should be refactored into an independently testable component before changing that form, rather than applying a fragile text-only edit during the protected audit.
+The skipped-trade form still contains example reason and outcome values. This was documented in `todo.md` as a distinct manual-entry consistency task. The compact one-line implementation should be refactored into an independently testable component before changing that form, rather than applying a fragile text-only edit during the protected audit. The protected mobile/tablet and multi-account review also remain tracked because the authenticated audit session has only one account and one available browser viewport.
