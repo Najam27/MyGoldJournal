@@ -163,3 +163,7 @@
 - [x] Make the first and every available Level / confluence option reliably selectable in the New Trade and Edit Trade dialogs.
 - [x] Derive displayed R:R from risk and realized P&L for closed trades, while preserving reward as the planned target field.
 - [x] Add focused regressions and complete validation for the repaired live MT5 ingestion and trade-editor workflows.
+- [x] Audit and replace remaining static or example-driven widget values with account-scoped database or live-MT5 data, while preserving safe empty and loading states.
+- [x] Normalize shared light/dark semantic tokens across application widgets, native form controls, dialogs, tables, floating controls, and account surfaces.
+- [x] Reposition the Manage accounts control above fixed/third-party bottom overlays and verify it remains visible and reachable at desktop and mobile breakpoints.
+- [x] Add focused dynamic-data, theme-compatibility, and responsive-control regressions, then complete production validation.

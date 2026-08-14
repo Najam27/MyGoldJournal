@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Bell, CheckCheck, Settings2 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+export const NOTIFICATION_OPEN_EVENT = "gold-journal:open-notifications";
 
 export function NotificationCenter() {
   const { isAuthenticated } = useAuth();
@@ -12,6 +14,7 @@ export function NotificationCenter() {
   const updateSettings = trpc.notifications.updateSettings.useMutation();
   const markRead = trpc.notifications.markRead.useMutation();
   const utils = trpc.useUtils();
+  useEffect(() => { const openCenter = () => setOpen(true); window.addEventListener(NOTIFICATION_OPEN_EVENT, openCenter); return () => window.removeEventListener(NOTIFICATION_OPEN_EVENT, openCenter); }, []);
   if (!isAuthenticated) return null;
   const settings = query.data?.settings ?? { goalAlerts: true, emailAlerts: false };
   const history = query.data?.history ?? [];

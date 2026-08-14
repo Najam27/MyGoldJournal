@@ -21,3 +21,11 @@ The seven stored positions for the connected account were reconciled once using 
 The trade editor was also repaired. Multi-select fields are no longer nested in HTML labels, and the token parser now retains slashes inside level names. The first built-in level, **SBR/TJL1**, can be selected and removed just like every other chip. Trade edits compare date-only values in PKT and persist a PKT-noon timestamp, eliminating the false future-date rejection around midnight. R:R now shows the realized value derived from risk and P&L in the editor, Trade Log, trade card, MT5 Live, and PDF report; the planned reward remains visible as its own field.
 
 Validation passed after the repair: **32 test files / 81 tests**, TypeScript validation, production build, and service-worker syntax validation.
+
+## Published Trade Log observation — 2026-08-14
+
+An authenticated published Trade Log review confirmed that the reconciled data is live: the new trade is dated 14/08/2026 and labelled **Asian**, while the prior daytime trade is labelled **Pre-NY**. Broker balance, equity, floating P&L, seven-trade count, and row actions were also visible and reachable in the reviewed desktop view.
+
+Immediately after publication, the installed-browser session continued to render the older planned-reward R:R values despite a forced refresh. The current production build contains the corrected **Realized R:R** implementation, so this is recorded as a temporary service-worker/CDN activation observation; it must be rechecked after the deployment has fully propagated before treating the primary-view audit as complete.
+
+After the deployment activation window, the authenticated published Trade Log loaded the new bundle. It showed the 14/08/2026 Asian close as **1 : 97.60**, the 0.65 win as **1 : 0.74**, and loss rows as negative realized R values. The latest desktop Trade Log verification is therefore complete. The next MT5 Live navigation click timed out in the connected browser channel before changing the journal state, so the remaining protected-view review is still pending.
