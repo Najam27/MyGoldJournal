@@ -35,6 +35,7 @@ The corrected `defaultTrade()` factory now supplies only the current PKT session
 | 00:00–02:59 PKT session | A manual entry is classified as Post-NY | Passed |
 | Fresh manual trade | Direction, result, timeframe, quality, execution type, patience, risk/reward/P&L, and notes are blank | Passed |
 | Incomplete manual save | Direction and result must be selected before mutation | Implemented in the client submit guard |
+| Fresh skipped-trade review | Direction, reason, confidence, outcome, estimate, and notes begin blank | Passed |
 
 The live reusable dialog now also contains disabled **Select direction** and **Select result** choices. Production bundle inspection confirmed that these prompt options are present in the published JavaScript, so a browser cannot silently render BUY and WIN as selected facts when the underlying fresh form is intentionally blank.
 
@@ -47,6 +48,10 @@ The populated Trade Log, Plan & Execution, Goals, AI Mentor, Options, and New Tr
 The latest light-theme shell was additionally captured at **375 × 812** and **768 × 1024**. The phone state retained a reachable menu, theme control, add action, loading status, and floating utility control without visible horizontal overflow. The tablet state retained a readable Trade Log header and top actions. Both captures were unauthenticated loading states; they confirm shell layout only and do not replace the remaining protected populated-view breakpoint audit.
 
 The same light-theme loading shell was captured at **1280 × 720** and **1600 × 1000**. At both widths, the header hierarchy and workspace controls stayed aligned with large empty-state space available for the protected journal content. The account-management floating control remained reachable at the lower-right edge. These are shell-level findings only; the remaining tracker item continues to require populated protected views at all four breakpoints.
+
+Current dark-theme shell captures at **375 × 812** and **768 × 1024** retained visible gold loading indicators, readable loading copy, clear navigation/theming/add controls, and reachable floating account management. No shell-level contrast or overflow defect was found in these two dark responsive states. As with the light captures, protected populated views remain outside the preview session and are still tracked separately.
+
+The dark loading shell also remained readable and aligned at **1280 × 720** and **1600 × 1000**. Header controls retained adequate contrast against the charcoal surface, and the loading indicator and copy remained visible at both desktop widths. These captures complete the current release’s dark shell evidence set while leaving the protected populated-view breakpoint work open.
 
 > The protected mobile/tablet review remains a tracked follow-up because only one browser viewport was available for the authenticated session, and creating additional account data or changing browser configuration would fall outside this non-mutating review.
 
@@ -62,4 +67,4 @@ The same light-theme loading shell was captured at **1280 × 720** and **1600 ×
 
 ## Tracked follow-up
 
-The skipped-trade form still contains example reason and outcome values. This was documented in `todo.md` as a distinct manual-entry consistency task. The compact one-line implementation should be refactored into an independently testable component before changing that form, rather than applying a fragile text-only edit during the protected audit. The protected mobile/tablet and multi-account review also remain tracked because the authenticated audit session has only one account and one available browser viewport.
+The skipped-trade form has been replaced with a standalone, independently tested component. It preserves the account-scoped list and review table while requiring trader-entered direction, reason, confidence, and outcome before a skipped opportunity can be saved. The protected mobile/tablet and multi-account review remain tracked because the authenticated audit session has only one account and one available browser viewport.

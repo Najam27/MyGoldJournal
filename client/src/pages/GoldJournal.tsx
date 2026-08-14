@@ -23,6 +23,7 @@ import { FlexibleGoalsView } from "@/components/FlexibleGoalsView";
 import { SessionRecovery } from "@/components/SessionRecovery";
 import { AnalysisEdge } from "@/components/AnalysisEdge";
 import { Mt5LiveView } from "@/components/Mt5LiveView";
+import { MissedTradesView } from "@/components/MissedTradesView";
 import { assessTraderGoal } from "@/lib/traderGoals";
 import { toast } from "sonner";
 import { Activity, BarChart3, Bell, BookOpen, Bot, CalendarDays, Check, ChevronDown, CircleDollarSign, Cloud, Download, FileSpreadsheet, FileText, Goal, ImagePlus, LogOut, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Plus, RefreshCcw, Settings2, ShieldAlert, Target, Trash2, Wallet, Wifi, WifiOff, X, Zap } from "lucide-react";
@@ -118,6 +119,7 @@ export default function GoldJournal() {
   const pagedTrades = tradeListQuery.data?.trades ?? [];
   if (showSplash || loading) return <SplashScreen />; if (!isAuthenticated) return <LoginScreen />;
   const TradeLog = TradeLogWithViewer;
+  const MissedView = MissedTradesView;
   const CalendarView = PnlCalendarWithWeeks;
   const TradeDialog = TradeDialogWithCustomOptions;
   const PlanView = PlanExecutionEditor;
