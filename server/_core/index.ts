@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import compression from "compression";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -10,6 +11,7 @@ import { registerMt5Ingest } from "../mt5Ingest";
 import { getActiveMt5Connection, recordMt5HistoryFailure } from "../mt5Db";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { canCompressResponsePath } from "../responseCompression";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -33,9 +35,16 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.use(compression({
+    threshold: 1_024,
+    filter(req, res) {
+      return canCompressResponsePath(req.path) && compression.filter(req, res);
+    },
+  }));
+  // Screenshot bytes are limited to 5 MB after decoding; the JSON cap allows
+  // base64 overhead without accepting arbitrarily large request bodies.
+  app.use(express.json({ limit: "8mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMt5Ingest(app);

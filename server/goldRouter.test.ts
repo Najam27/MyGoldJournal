@@ -38,20 +38,26 @@ describe("Gold Journal protected server workflows", () => {
     expect(mocks.ensureAccount).toHaveBeenCalledWith(7);
   });
 
-  it("reconciles stored MT5 positions before returning an owned journal", async () => {
+  it("returns an owned journal without repeating stored-position reconciliation on every read", async () => {
     mocks.getOwnedAccount.mockResolvedValue({ id: 12, userId: 7, name: "Primary Account" });
     mocks.syncStoredMt5.mockResolvedValue(4);
     mocks.getJournal.mockResolvedValue({ activeAccount: { id: 12 }, trades: [{ id: 1, result: "WIN" }] });
     const caller = goldRouter.createCaller({ user } as any);
 
     await expect(caller.journal.get({ accountId: 12 })).resolves.toMatchObject({ activeAccount: { id: 12 }, trades: [{ result: "WIN" }] });
-    expect(mocks.syncStoredMt5).toHaveBeenCalledWith(7, 12);
+    expect(mocks.syncStoredMt5).not.toHaveBeenCalled();
     expect(mocks.getJournal).toHaveBeenCalledWith(7, 12);
   });
 
   it("blocks anonymous account mutations before a database call", async () => {
     const caller = goldRouter.createCaller({ user: null } as any);
     await expect(caller.accounts.create({ name: "Restricted Account", startingBalance: 0 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    expect(mocks.getDb).not.toHaveBeenCalled();
+  });
+
+  it("rejects HTML-like account input before any database write", async () => {
+    const caller = goldRouter.createCaller({ user } as any);
+    await expect(caller.accounts.create({ name: "<img src=x onerror=alert(1)>", startingBalance: 0 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(mocks.getDb).not.toHaveBeenCalled();
   });
 

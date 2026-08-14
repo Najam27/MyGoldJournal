@@ -25,3 +25,11 @@ The Manage accounts control was moved above the fixed bottom overlay stack: **16
 ## Deployment note
 
 The release improves functional correctness and removes confirmed static UI assumptions. It does not represent an unsupported guarantee of unlimited-scale capacity; production capacity remains dependent on the managed database, authentication provider, hosting limits, monitoring, and operational load testing appropriate to actual traffic.
+
+## Authenticated published review
+
+The authenticated published Trade Log was reviewed with the connected MT5 account after release. It rendered eight synchronized positions, current broker balance and equity, the new 14/08/2026 Asian position, the corrected 05:41 PKT Asian classification, visible saved level data, and realized R:R values. Read-only row actions, account selection, exports, navigation, and the published dark visual system were present.
+
+The installed-browser session continued to show the old bottom position for Manage accounts after a normal published-page reload even though the current production CSS contains the elevated semantic rule. This is recorded as a stale service-worker stylesheet activation observation and will be rechecked after a forced refresh before the account-control audit is closed.
+
+A forced refresh kept the same installed-browser styling state. The protected browser extension then timed out on the MT5 Live navigation and state-check requests, so the remaining authenticated view-by-view audit cannot progress safely until the connected browser responds again. No journal data, accounts, settings, or trades were mutated during these checks.

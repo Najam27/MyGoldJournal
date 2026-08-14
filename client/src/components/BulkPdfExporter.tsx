@@ -30,6 +30,7 @@ export function BulkPdfExporter() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [busy, setBusy] = useState(false);
+  const utils = trpc.useUtils();
   useEffect(() => subscribeSelectedAccount(setAccountId), []);
   useEffect(() => { const openExporter = () => setOpen(true); window.addEventListener("gold-journal:bulk-pdf", openExporter); return () => window.removeEventListener("gold-journal:bulk-pdf", openExporter); }, []);
   const account = journal.data?.activeAccount;
@@ -44,6 +45,12 @@ export function BulkPdfExporter() {
     if (!account || !selected.length) { toast.error("No trades match this export range."); return; }
     setBusy(true);
     try {
+      const evidenceUrls = new Map<number, string | null>();
+      for (let offset = 0; offset < selected.length; offset += 50) {
+        const batch = selected.slice(offset, offset + 50).map((trade: any) => trade.id);
+        const evidence = await utils.trades.screenshots.fetch({ tradeIds: batch });
+        Object.entries(evidence.urls).forEach(([tradeId, url]) => evidenceUrls.set(Number(tradeId), url));
+      }
       const pdf = new jsPDF({ unit: "mm", format: "a4" });
       setPageBackground(pdf);
       sectionTitle(pdf, "Gold Journal · Private performance report", account.name);
@@ -55,7 +62,7 @@ export function BulkPdfExporter() {
       pdf.setTextColor(...colors.muted); pdf.setFontSize(9); addWrapped(pdf, "This report contains trade cards, linked screenshot evidence when available, performance analysis, and a daily P&L calendar for the selected account only.", page.margin, 103, 165);
 
       for (let index = 0; index < selected.length; index += 1) {
-        const trade: any = selected[index];
+        const trade: any = { ...selected[index], screenshotUrl: evidenceUrls.get(selected[index].id) ?? null };
         pdf.addPage(); setPageBackground(pdf);
         sectionTitle(pdf, `Trade card ${String(index + 1).padStart(2, "0")} / ${String(selected.length).padStart(2, "0")}`, `${formatDate(trade.tradeDate)} · ${trade.direction} · ${trade.result.replace("_", " ")}`);
         pdf.setFillColor(...colors.panel); pdf.roundedRect(page.margin, 40, 180, 47, 4, 4, "F");

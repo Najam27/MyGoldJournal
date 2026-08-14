@@ -167,3 +167,11 @@
 - [x] Normalize shared light/dark semantic tokens across application widgets, native form controls, dialogs, tables, floating controls, and account surfaces.
 - [x] Reposition the Manage accounts control above fixed/third-party bottom overlays and verify it remains visible and reachable at desktop and mobile breakpoints.
 - [x] Add focused dynamic-data, theme-compatibility, and responsive-control regressions, then complete production validation.
+- [x] Audit server-side schema validation, HTML/script rejection, generic error behavior, and rejected-request monitoring across every protected form and MT5 payload.
+- [x] Document the Manus OAuth authentication boundary, audit for password-handling or account-enumeration risks, and harden applicable authentication error responses without replacing the managed identity provider.
+- [x] Scan current source, build output, and reachable repository history for accidental secrets; remediate confirmed exposure without reporting sensitive values.
+- [x] Audit dependency vulnerabilities and safely apply compatible package updates, documenting findings and unresolved manual-review items.
+- [x] Harden screenshot uploads with server-side signature/content validation, size limits, isolated content types, and documented deletion constraints.
+- [x] Audit and improve response compression, database bulk-write paths, external-dependency timeouts/circuit breaking, and optimistic mutation behavior where applicable.
+- [x] Audit and improve query pagination, search debouncing, signed screenshot loading, aggregation placement, and service-worker cache/update behavior.
+- [x] Add regression coverage, complete end-to-end validation, and publish a documented thirteen-control hardening record.

@@ -1,20 +1,21 @@
-import { and, count, desc, eq, like, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, like, or } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { accounts, cashMovements, dailyPlans, goals, mt5Connections, mt5LivePositions, notificationHistory, notificationSettings, optionLists, skippedTrades, trades } from "../drizzle/schema";
 import { getDb } from "./db";
 import { ensureAccount, getJournal, getOwnedAccount, ownsTrade } from "./goldDb";
-import { getMt5History, getMt5Workspace, syncStoredMt5PositionsToTradeLog } from "./mt5Db";
+import { getMt5History, getMt5Workspace, hashMt5ApiKey, syncStoredMt5PositionsToTradeLog } from "./mt5Db";
 import { toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 import { protectedProcedure, router } from "./_core/trpc";
 import { storageGetSignedUrl, storagePut } from "./storage";
+import { isSupportedImageSignature, optionalSafeText, requiredSafeText, safeText } from "./inputValidation";
 
-const optionalText = (max = 5000) => z.string().trim().max(max).optional().default("");
+const optionalText = optionalSafeText;
 const accountIdInput = z.object({ accountId: z.number().int().positive() });
 const mt5TicketInput = z.string().regex(/^\d+$/).max(20).optional();
 const lossFloorMetrics = new Set(["daily_loss", "weekly_drawdown"]);
-const goalInput = z.object({ accountId: z.number().int().positive(), name: z.string().trim().min(1).max(120), description: optionalText(500), period: z.enum(["DAILY", "WEEKLY", "MONTHLY"]), metric: z.string().trim().min(1).max(80), comparison: z.enum(["GTE", "LTE"]), target: z.number().min(-1_000_000), notify: z.boolean().default(true), active: z.boolean().default(true) }).superRefine((value, ctx) => {
+const goalInput = z.object({ accountId: z.number().int().positive(), name: requiredSafeText(120), description: optionalText(500), period: z.enum(["DAILY", "WEEKLY", "MONTHLY"]), metric: requiredSafeText(80), comparison: z.enum(["GTE", "LTE"]), target: z.number().min(-1_000_000), notify: z.boolean().default(true), active: z.boolean().default(true) }).superRefine((value, ctx) => {
   if (lossFloorMetrics.has(value.metric) && value.target >= 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["target"], message: "Loss controls use a negative P&L floor, for example -100." });
   if (!lossFloorMetrics.has(value.metric) && value.target < 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["target"], message: "Only loss-floor controls can use a negative threshold." });
 });
@@ -72,17 +73,16 @@ export const goldRouter = router({
     bootstrap: protectedProcedure.query(({ ctx }) => ensureAccount(ctx.user.id)),
     get: protectedProcedure.input(z.object({ accountId: z.number().int().positive().optional() })).query(async ({ ctx, input }) => {
       const account = await getOwnedAccount(ctx.user.id, input.accountId);
-      await syncStoredMt5PositionsToTradeLog(ctx.user.id, account.id);
       return getJournal(ctx.user.id, account.id);
     }),
   }),
   accounts: router({
-    create: protectedProcedure.input(z.object({ name: z.string().trim().min(1).max(100), startingBalance: z.number().min(0).default(0) })).mutation(async ({ ctx, input }) => {
+    create: protectedProcedure.input(z.object({ name: requiredSafeText(100), startingBalance: z.number().finite().min(0).default(0) })).mutation(async ({ ctx, input }) => {
       const db = await dbOrThrow();
       const inserted = await db.insert(accounts).values({ userId: ctx.user.id, name: input.name, startingBalance: input.startingBalance.toFixed(2) });
       return { id: Number(inserted[0].insertId) };
     }),
-    rename: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), name: z.string().trim().min(1).max(100) })).mutation(async ({ ctx, input }) => {
+    rename: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), name: requiredSafeText(100) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
       await db.update(accounts).set({ name: input.name }).where(and(eq(accounts.id, input.accountId), eq(accounts.userId, ctx.user.id)));
@@ -117,14 +117,14 @@ export const goldRouter = router({
       const synchronized = await syncStoredMt5PositionsToTradeLog(ctx.user.id, input.accountId);
       return { synchronized };
     }),
-    createConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), label: z.string().trim().min(1).max(120) })).mutation(async ({ ctx, input }) => {
+    createConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), label: requiredSafeText(120) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
       const existing = await db.select({ id: mt5Connections.id }).from(mt5Connections).where(eq(mt5Connections.accountId, input.accountId)).limit(1);
       if (existing[0]) throw new Error("This Gold Journal account already has an MT5 connection. Edit or replace it from MT5 Live.");
       const apiKey = randomBytes(32).toString("base64url");
-      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey, active: true });
-      return { id: Number(inserted[0].insertId) };
+      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey: hashMt5ApiKey(apiKey), active: true });
+      return { id: Number(inserted[0].insertId), apiKey };
     }),
     setConnectionActive: protectedProcedure.input(z.object({ connectionId: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
       const connection = await ownMt5Connection(ctx.user.id, input.connectionId);
@@ -142,7 +142,6 @@ export const goldRouter = router({
   trades: router({
     list: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), page: z.number().int().min(1).default(1), pageSize: z.number().int().min(1).max(50).default(12), search: z.string().trim().max(160).optional().default(""), result: z.enum(["WIN", "LOSS", "BREAK_EVEN", "OPEN"]).optional() })).query(async ({ ctx, input }) => {
       const account = await getOwnedAccount(ctx.user.id, input.accountId);
-      await syncStoredMt5PositionsToTradeLog(ctx.user.id, account.id);
       const db = await dbOrThrow();
       let where = and(eq(trades.userId, ctx.user.id), eq(trades.accountId, account.id));
       if (input.result) where = and(where, eq(trades.result, input.result));
@@ -155,8 +154,28 @@ export const goldRouter = router({
       const pageCount = Math.max(1, Math.ceil(total / input.pageSize));
       const page = Math.min(input.page, pageCount);
       const rows = await db.select().from(trades).where(where).orderBy(desc(trades.tradeDate), desc(trades.id)).limit(input.pageSize).offset((page - 1) * input.pageSize);
-      const hydratedRows = await Promise.all(rows.map(async trade => ({ ...trade, screenshotUrl: trade.screenshotKey ? await storageGetSignedUrl(trade.screenshotKey).catch(() => null) : null })));
-      return { trades: hydratedRows.map(toSafeTrade), total, page, pageSize: input.pageSize, pageCount };
+      return { trades: rows.map(toSafeTrade), total, page, pageSize: input.pageSize, pageCount };
+    }),
+    screenshot: protectedProcedure.input(z.object({ tradeId: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      const trade = await ownsTrade(ctx.user.id, input.tradeId);
+      if (!trade.screenshotKey) return { url: null };
+      const url = await Promise.race<string | null>([
+        storageGetSignedUrl(trade.screenshotKey).catch(() => null),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 1_500)),
+      ]);
+      return { url };
+    }),
+    screenshots: protectedProcedure.input(z.object({ tradeIds: z.array(z.number().int().positive()).min(1).max(50) })).query(async ({ ctx, input }) => {
+      const db = await dbOrThrow();
+      const rows = await db.select({ id: trades.id, screenshotKey: trades.screenshotKey }).from(trades).where(and(eq(trades.userId, ctx.user.id), inArray(trades.id, input.tradeIds)));
+      const pairs = await Promise.all(rows.map(async row => [row.id, row.screenshotKey ? await storageGetSignedUrl(row.screenshotKey).catch(() => null) : null] as const));
+      return { urls: Object.fromEntries(pairs) as Record<number, string | null> };
+    }),
+    removeScreenshot: protectedProcedure.input(z.object({ tradeId: z.number().int().positive(), confirmed: z.literal(true) })).mutation(async ({ ctx, input }) => {
+      await ownsTrade(ctx.user.id, input.tradeId);
+      const db = await dbOrThrow();
+      await db.update(trades).set({ screenshotKey: null, screenshotName: null }).where(and(eq(trades.id, input.tradeId), eq(trades.userId, ctx.user.id)));
+      return { success: true };
     }),
     create: protectedProcedure.input(tradeInput).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
@@ -203,11 +222,12 @@ export const goldRouter = router({
       await db.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
       return { success: true };
     }),
-    uploadScreenshot: protectedProcedure.input(z.object({ tradeId: z.number().int().positive(), fileName: z.string().min(1).max(255), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]), base64: z.string().min(40).max(7_000_000) })).mutation(async ({ ctx, input }) => {
+    uploadScreenshot: protectedProcedure.input(z.object({ tradeId: z.number().int().positive(), fileName: requiredSafeText(255), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]), base64: z.string().min(40).max(7_000_000) })).mutation(async ({ ctx, input }) => {
       const trade = await ownsTrade(ctx.user.id, input.tradeId);
       const base64 = input.base64.includes(",") ? input.base64.split(",")[1] : input.base64;
       const bytes = Buffer.from(base64, "base64");
       if (bytes.byteLength > 5 * 1024 * 1024) throw new Error("Screenshot must be 5MB or smaller.");
+      if (!isSupportedImageSignature(bytes, input.mimeType)) throw new Error("Screenshot upload could not be accepted.");
       const extension = input.mimeType === "image/png" ? "png" : input.mimeType === "image/webp" ? "webp" : "jpg";
       const stored = await storagePut(`gold-journal/${ctx.user.id}/trades/${trade.id}-${nanoid()}.${extension}`, bytes, input.mimeType);
       const db = await dbOrThrow();
@@ -216,7 +236,7 @@ export const goldRouter = router({
     }),
   }),
   cash: router({
-    create: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), movementDate: z.number().int().positive(), type: z.enum(["DEPOSIT", "WITHDRAW"]), amount: z.number().positive(), note: optionalText(1000) })).mutation(async ({ ctx, input }) => {
+    create: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), movementDate: z.number().int().positive(), type: z.enum(["DEPOSIT", "WITHDRAW"]), amount: z.number().finite().positive(), note: optionalText(1000) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
       await db.insert(cashMovements).values({ userId: ctx.user.id, accountId: input.accountId, movementDate: new Date(input.movementDate), type: input.type, amount: input.amount.toFixed(2), note: input.note });
@@ -257,7 +277,7 @@ export const goldRouter = router({
       const rows = await db.select().from(optionLists).where(eq(optionLists.userId, ctx.user.id)).orderBy(optionLists.category, optionLists.value);
       return rows.map(toSafeJournalRecord);
     }),
-    add: protectedProcedure.input(z.object({ category: z.string().trim().min(1).max(80), value: z.string().trim().min(1).max(160) })).mutation(async ({ ctx, input }) => {
+    add: protectedProcedure.input(z.object({ category: requiredSafeText(80), value: requiredSafeText(160) })).mutation(async ({ ctx, input }) => {
       const db = await dbOrThrow();
       await db.insert(optionLists).values({ userId: ctx.user.id, category: input.category, value: input.value }).onDuplicateKeyUpdate({ set: { active: true } });
       return { success: true };
@@ -304,7 +324,7 @@ export const goldRouter = router({
     }),
   }),
   skipped: router({
-    create: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), tradeDate: z.number().int().positive(), session: z.string().min(1).max(40), level: optionalText(100), timeframe: optionalText(20), direction: z.enum(["BUY", "SELL"]), skipReason: z.string().min(1).max(120), confidence: z.number().int().min(1).max(5), outcome: z.string().min(1).max(80), estimatedMissed: z.number(), notes: optionalText(3000) })).mutation(async ({ ctx, input }) => {
+    create: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), tradeDate: z.number().int().positive(), session: requiredSafeText(40), level: optionalText(100), timeframe: optionalText(20), direction: z.enum(["BUY", "SELL"]), skipReason: requiredSafeText(120), confidence: z.number().int().min(1).max(5), outcome: requiredSafeText(80), estimatedMissed: z.number().finite(), notes: optionalText(3000) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
       await db.insert(skippedTrades).values({ ...input, userId: ctx.user.id, tradeDate: new Date(input.tradeDate), estimatedMissed: input.estimatedMissed.toFixed(2) });
