@@ -24,6 +24,7 @@ export function formatRr(risk: number | string | null | undefined, reward: numbe
 
 export function getPktSession(date = new Date()) {
   const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Karachi", hour: "2-digit", hour12: false }).format(date));
+  if (hour < 3 || hour >= 20) return "Post-NY";
   if (hour >= 3 && hour < 5) return "Pre-Asian";
   if (hour < 8) return "Asian";
   if (hour < 10) return "Post-Asian";
@@ -39,4 +40,3 @@ export function toNumber(value: unknown) {
   const result = Number(value);
   return Number.isFinite(result) ? result : 0;
 }
-
