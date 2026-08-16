@@ -123,7 +123,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .gj-sidebar.is-collapsed + .gj-main { margin-left: 76px; }
 .sidebar-brand { min-height: 82px; display: flex; align-items: center; gap: 12px; padding: 20px 17px; border-bottom: 1px solid rgba(255,255,255,.055); }
 .gold-mark { flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; background: radial-gradient(circle at 35% 20%, rgba(255,230,152,.24), rgba(233,182,75,.08) 55%, transparent 70%); box-shadow: 0 0 26px rgba(233,182,75,.13); overflow: hidden; }
-.gold-mark img { width: 100%; height: 100%; object-fit: contain; }
+.gold-mark span { color: #f5d98d; font-family: "DM Mono", monospace; font-size: 0.32em; font-weight: 700; letter-spacing: .08em; line-height: 1; text-shadow: 0 0 12px rgba(233,182,75,.36); }
 .brand-copy { min-width: 0; display: grid; gap: 3px; }
 .brand-copy strong { font-size: 14px; letter-spacing: -.02em; white-space: nowrap; }
 .brand-copy span, .eyebrow, .section-label { color: #c8a150; font-size: 9px; font-weight: 700; letter-spacing: .17em; }

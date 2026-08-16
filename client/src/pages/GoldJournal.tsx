@@ -1,7 +1,5 @@
 // @ts-nocheck
 import DOMPurify from "dompurify";
-import { jsPDF } from "jspdf";
-import * as XLSX from "xlsx";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -28,7 +26,6 @@ import { assessTraderGoal } from "@/lib/traderGoals";
 import { toast } from "sonner";
 import { Activity, BarChart3, Bell, BookOpen, Bot, CalendarDays, Check, ChevronDown, CircleDollarSign, Cloud, Download, FileSpreadsheet, FileText, Goal, ImagePlus, LogOut, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Plus, RefreshCcw, Settings2, ShieldAlert, Target, Trash2, Wallet, Wifi, WifiOff, X, Zap } from "lucide-react";
 
-const logoUrl = "/manus-storage/gold-journal-au-mark_de0e8ecf.png";
 type View = "trades" | "missed" | "analysis" | "goals" | "calendar" | "plan" | "mentor" | "mt5" | "options";
 type TradeForm = { tradeDate: string; session: string; direction: "" | "BUY" | "SELL"; result: "" | "WIN" | "LOSS" | "BREAK_EVEN" | "OPEN"; level: string; timeframe: string; setupQuality: string; executionType: string; marketCondition: string; biasAlignment: string; confirmationType: string; slPlacement: string; tpPlacement: string; mistake: string; holdQuality: string; patienceScore: string; risk: string; reward: string; pnl: string; notes: string; emotionBefore: string; emotionDuring: string; emotionAfter: string; mt5Ticket: string };
 
@@ -45,7 +42,7 @@ function dateInput(date = new Date()) { return new Date(date.getTime() - date.ge
 export function defaultTrade(): TradeForm { return { tradeDate: dateInput(), session: getPktSession(), direction: "", result: "", level: "", timeframe: "", setupQuality: "", executionType: "", marketCondition: "", biasAlignment: "", confirmationType: "", slPlacement: "", tpPlacement: "", mistake: "", holdQuality: "", patienceScore: "", risk: "", reward: "", pnl: "", notes: "", emotionBefore: "", emotionDuring: "", emotionAfter: "", mt5Ticket: "" }; }
 function initials(name?: string | null) { return (name || "Gold Trader").split(" ").slice(0, 2).map(part => part[0]).join("").toUpperCase(); }
 function sanitize(value?: string | null) { return DOMPurify.sanitize(value ?? "", { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }); }
-function GoldMark({ size = 34 }: { size?: number }) { return <div className="gold-mark" style={{ width: size, height: size }}><img src={logoUrl} alt="Gold Journal" /></div>; }
+function GoldMark({ size = 34 }: { size?: number }) { return <div className="gold-mark" style={{ width: size, height: size }} aria-label="Gold Journal mark"><span aria-hidden="true">AU</span></div>; }
 function StatCard({ label, value, detail, tone = "gold" }: { label: string; value: string; detail: string; tone?: string }) { return <div className={`stat-card stat-${tone}`}><p>{label}</p><strong className="data-text">{value}</strong><span>{detail}</span></div>; }
 function EmptyState({ title, copy, action }: { title: string; copy: string; action?: React.ReactNode }) { return <div className="empty-state"><div className="empty-orbit"><GoldMark size={42} /></div><h3>{title}</h3><p>{copy}</p>{action}</div>; }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="field"><span>{label}</span>{children}</label>; }
@@ -113,7 +110,7 @@ export default function GoldJournal() {
     try { const result = editing ? await updateTrade.mutateAsync({ ...payload, tradeId: editing.id }) : await createTrade.mutateAsync(payload); const tradeId = editing?.id ?? result.id; if (screenshot) { const fileData = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(screenshot); }); setUploadProgress(50); try { await uploadScreenshot.mutateAsync({ tradeId, fileName: screenshot.name, mimeType: screenshot.type as "image/jpeg" | "image/png" | "image/webp", base64: fileData }); setUploadProgress(100); } catch { toast.warning("Trade saved but screenshot upload failed. Re-upload from edit."); } } toast.success(editing ? "Trade updated." : "Trade saved and balance recalculated."); setTradeDialog(false); refresh(); } catch (error: any) { toast.error(error.message || "Trade could not be saved."); } };
   const exportRows = trades.map((trade: any, index: number) => ({ "#": index + 1, Date: formatDate(trade.tradeDate), Session: trade.session, Side: trade.direction, Level: trade.level, Result: trade.result, Risk: toNumber(trade.risk), Reward: toNumber(trade.reward), "R:R": formatRr(trade.risk, trade.reward), "P&L": toNumber(trade.pnl), Notes: sanitize(trade.notes) }));
   const exportCsv = () => { const headers = Object.keys(exportRows[0] ?? { Date: "" }); const rows = exportRows.map(row => headers.map(header => `"${String(row[header as keyof typeof row] ?? "").replaceAll('"', '""')}"`).join(",")); const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "GoldJournal_Trades.csv"; link.click(); URL.revokeObjectURL(url); };
-  const exportExcel = () => { const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(exportRows), "Trades"); XLSX.writeFile(workbook, "GoldJournal_Trades.xlsx"); };
+  const exportExcel = async () => { const { utils, writeFile } = await import("xlsx"); const workbook = utils.book_new(); utils.book_append_sheet(workbook, utils.json_to_sheet(exportRows), "Trades"); writeFile(workbook, "GoldJournal_Trades.xlsx"); };
   const exportPdf = () => window.dispatchEvent(new Event("gold-journal:bulk-pdf"));
   const requestInstall = async () => { if (installEvent) { installEvent.prompt(); await installEvent.userChoice; setInstallEvent(undefined); } else setInstallHelp(true); };
   const pagedTrades = tradeListQuery.data?.trades ?? [];
