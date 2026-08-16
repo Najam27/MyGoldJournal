@@ -51,7 +51,7 @@ function createFakeDb() {
     let value: any;
     const chain: any = {
       values(next: any) { value = next; return chain; },
-      onDuplicateKeyUpdate({ set }: { set: Record<string, unknown> }) {
+      onConflictDoUpdate({ set }: { set: Record<string, unknown> }) {
         const rows = rowsFor(table);
         const existing = table === mt5LivePositions
           ? rows.find(row => row.accountId === value.accountId && row.ticket === value.ticket)

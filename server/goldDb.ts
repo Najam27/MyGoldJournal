@@ -15,8 +15,8 @@ export async function ensureAccount(userId: number) {
   const db = await requireDb();
   const existing = await db.select().from(accounts).where(eq(accounts.userId, userId)).limit(1);
   if (existing[0]) return existing[0];
-  const inserted = await db.insert(accounts).values({ userId, name: "Primary Account", startingBalance: "0.00" });
-  const accountId = Number(inserted[0].insertId);
+  const inserted = await db.insert(accounts).values({ userId, name: "Primary Account", startingBalance: "0.00" }).returning({ id: accounts.id });
+  const accountId = inserted[0]?.id;
   const created = await db.select().from(accounts).where(eq(accounts.id, accountId)).limit(1);
   return created[0]!;
 }

@@ -185,7 +185,8 @@ async function syncMt5PositionToTradeLog(db: Mt5WriteDb, userId: number, account
     emotionAfter: "",
     mt5Ticket: position.ticket,
   };
-  await db.insert(trades).values(record).onDuplicateKeyUpdate({
+  await db.insert(trades).values(record).onConflictDoUpdate({
+    target: [trades.accountId, trades.mt5Ticket],
     set: {
       tradeDate: record.tradeDate,
       session: record.session,
@@ -246,7 +247,10 @@ export async function upsertMt5OpenPosition(userId: number, accountId: number, v
     status: "OPEN" as const,
     updatedAt: new Date(),
   };
-    await tx.insert(mt5LivePositions).values(record).onDuplicateKeyUpdate({ set: record });
+    await tx.insert(mt5LivePositions).values(record).onConflictDoUpdate({
+      target: [mt5LivePositions.accountId, mt5LivePositions.ticket],
+      set: record,
+    });
     await syncMt5PositionToTradeLog(tx, userId, accountId, { ...value, pnl: value.floatingPnl, result: "OPEN", tradeTime: value.openTime });
   };
   if (typeof db.transaction === "function") await db.transaction(apply);
@@ -281,7 +285,10 @@ export async function upsertMt5ClosedPosition(userId: number, accountId: number,
     status: "CLOSED" as const,
     updatedAt: new Date(),
   };
-    await tx.insert(mt5LivePositions).values(record).onDuplicateKeyUpdate({ set: record });
+    await tx.insert(mt5LivePositions).values(record).onConflictDoUpdate({
+      target: [mt5LivePositions.accountId, mt5LivePositions.ticket],
+      set: record,
+    });
     await syncMt5PositionToTradeLog(tx, userId, accountId, { ...value, pnl: value.realizedPnl, result: value.result, tradeTime: value.closeTime });
   };
   if (typeof db.transaction === "function") await db.transaction(apply);

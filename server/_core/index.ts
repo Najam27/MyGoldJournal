@@ -31,10 +31,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-async function startServer() {
+export async function createApp(options: { serveFrontend?: boolean } = {}) {
+  const { serveFrontend = true } = options;
   assertProductionConfiguration();
   const app = express();
-  const server = createServer(app);
   app.disable("x-powered-by");
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -69,7 +69,6 @@ async function startServer() {
     }
     next(error);
   });
-  // tRPC API
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -77,13 +76,25 @@ async function startServer() {
       createContext,
     })
   );
-  // development mode uses Vite, production mode uses static files
+  if (serveFrontend) {
+    if (process.env.NODE_ENV === "development") {
+      const server = createServer(app);
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+  }
+  return app;
+}
+
+export async function startServer() {
+  const app = await createApp({ serveFrontend: false });
+  const server = createServer(app);
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
-
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
 
@@ -96,4 +107,6 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+if (process.env.NETLIFY !== "true") {
+  startServer().catch(console.error);
+}
