@@ -16,11 +16,14 @@ const timestamp = z.string().trim().min(8).max(40).transform(value => {
 const direction = z.enum(["Buy", "Sell", "BUY", "SELL"]).transform(value => value.toUpperCase() as "BUY" | "SELL");
 const result = z.enum(["Win", "Loss", "Break-even", "WIN", "LOSS", "BREAK_EVEN"]).transform(value => value === "Win" || value === "WIN" ? "WIN" : value === "Loss" || value === "LOSS" ? "LOSS" : "BREAK_EVEN" as const);
 
-const positionBase = z.object({ ticket, symbol: z.string().trim().min(1).max(32), direction, lots: numeric.min(0), open_price: numeric, sl_price: numeric.optional().default(0), tp_price: numeric.optional().default(0), risk_usd: numeric.min(0), reward_usd: numeric.min(0), rr_ratio: numeric.min(0) });
+const positionBase = z.object({ ticket, symbol: z.string().trim().min(1).max(32), direction, lots: numeric.gt(0), open_price: numeric.gt(0), sl_price: numeric.optional().default(0), tp_price: numeric.optional().default(0), risk_usd: numeric.min(0), reward_usd: numeric.min(0), rr_ratio: numeric.min(0) });
 const base = positionBase.extend({ api_key: apiKey });
-const closedFields = z.object({ close_price: numeric, realized_pnl: numeric, result, close_time: timestamp, open_time: timestamp.optional() });
-const closedPosition = positionBase.merge(closedFields);
-const closedEvent = base.merge(closedFields).extend({ event: z.literal("close") });
+const closedFields = z.object({ close_price: numeric.gt(0), realized_pnl: numeric, result, close_time: timestamp, open_time: timestamp.optional() });
+const validateClosedChronology = (value: { open_time?: Date; close_time: Date }, ctx: z.RefinementCtx) => {
+  if (value.open_time && value.close_time.getTime() < value.open_time.getTime()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["close_time"], message: "close_time must not precede open_time" });
+};
+const closedPosition = positionBase.merge(closedFields).superRefine(validateClosedChronology);
+const closedEvent = base.merge(closedFields).extend({ event: z.literal("close") }).superRefine(validateClosedChronology);
 export const mt5Payload = z.discriminatedUnion("event", [
   z.object({ event: z.literal("ping"), api_key: apiKey }),
   z.object({ event: z.literal("summary"), api_key: apiKey, mt5_login: ticket, broker_server: z.string().trim().min(1).max(160), currency: z.string().trim().min(1).max(16), balance: numeric, equity: numeric, margin: numeric.min(0), free_margin: numeric, floating_pnl: numeric }),
@@ -33,6 +36,8 @@ const RATE_WINDOW_MS = 1_000;
 const MAX_RATE_KEYS = 10_000;
 const requests = new Map<string, { startedAt: number; count: number }>();
 let lastRateSweep = 0;
+export function getMt5RateLimiterSize() { return requests.size; }
+
 function canAccept(key: string) {
   const now = Date.now();
   if (now - lastRateSweep >= RATE_WINDOW_MS) {

@@ -10,6 +10,9 @@ async function requireDb() {
   return db;
 }
 
+type Mt5Db = NonNullable<Awaited<ReturnType<typeof getDb>>>;
+type Mt5WriteDb = Pick<Mt5Db, "insert" | "select" | "update">;
+
 function safePosition(position: typeof mt5LivePositions.$inferSelect, journaledTickets: Set<string>) {
   return {
     id: position.id,
@@ -65,7 +68,7 @@ export async function getMt5Workspace(userId: number, accountId: number) {
   await getOwnedAccount(userId, accountId);
   const db = await requireDb();
   const [connections, accountRows, openPositions, closedPositions, journalRows] = await Promise.all([
-    db.select().from(mt5Connections).where(eq(mt5Connections.userId, userId)).orderBy(desc(mt5Connections.createdAt)),
+    db.select().from(mt5Connections).where(and(eq(mt5Connections.userId, userId), eq(mt5Connections.accountId, accountId))).orderBy(desc(mt5Connections.createdAt)),
     db.select({ id: accounts.id, name: accounts.name }).from(accounts).where(eq(accounts.userId, userId)),
     db.select().from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.status, "OPEN"))).orderBy(desc(mt5LivePositions.updatedAt)),
     db.select().from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.status, "CLOSED"))).orderBy(desc(mt5LivePositions.closeTime)).limit(10),
@@ -153,8 +156,7 @@ type LiveBase = { ticket: bigint; symbol: string; direction: "BUY" | "SELL"; lot
 
 type SyncedMt5Position = LiveBase & { pnl: number; result: "WIN" | "LOSS" | "BREAK_EVEN" | "OPEN"; tradeTime: Date };
 
-async function syncMt5PositionToTradeLog(userId: number, accountId: number, position: SyncedMt5Position) {
-  const db = await requireDb();
+async function syncMt5PositionToTradeLog(db: Mt5WriteDb, userId: number, accountId: number, position: SyncedMt5Position) {
   const record = {
     userId,
     accountId,
@@ -201,7 +203,7 @@ export async function syncStoredMt5PositionsToTradeLog(userId: number, accountId
   const positions = await db.select().from(mt5LivePositions).where(eq(mt5LivePositions.accountId, accountId));
   for (const position of positions) {
     const closed = position.status === "CLOSED";
-    await syncMt5PositionToTradeLog(userId, accountId, {
+    await syncMt5PositionToTradeLog(db, userId, accountId, {
       ticket: position.ticket,
       symbol: position.symbol,
       direction: position.direction,
@@ -223,10 +225,11 @@ export async function syncStoredMt5PositionsToTradeLog(userId: number, accountId
 
 export async function upsertMt5OpenPosition(userId: number, accountId: number, value: LiveBase & { floatingPnl: number }) {
   const db = await requireDb();
-  const existing = await db.select({ status: mt5LivePositions.status, openTime: mt5LivePositions.openTime }).from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.ticket, value.ticket))).limit(1);
-  if (existing[0]?.status === "CLOSED") return;
-  if (existing[0]?.openTime && existing[0].openTime.getTime() > value.openTime.getTime()) return;
-  const record = {
+  const apply = async (tx: Mt5WriteDb) => {
+    const existing = await tx.select({ status: mt5LivePositions.status, openTime: mt5LivePositions.openTime }).from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.ticket, value.ticket))).limit(1);
+    if (existing[0]?.status === "CLOSED") return;
+    if (existing[0]?.openTime && existing[0].openTime.getTime() > value.openTime.getTime()) return;
+    const record = {
     accountId,
     ticket: value.ticket,
     symbol: value.symbol,
@@ -243,16 +246,21 @@ export async function upsertMt5OpenPosition(userId: number, accountId: number, v
     status: "OPEN" as const,
     updatedAt: new Date(),
   };
-  await db.insert(mt5LivePositions).values(record).onDuplicateKeyUpdate({ set: record });
-  await syncMt5PositionToTradeLog(userId, accountId, { ...value, pnl: value.floatingPnl, result: "OPEN", tradeTime: value.openTime });
+    await tx.insert(mt5LivePositions).values(record).onDuplicateKeyUpdate({ set: record });
+    await syncMt5PositionToTradeLog(tx, userId, accountId, { ...value, pnl: value.floatingPnl, result: "OPEN", tradeTime: value.openTime });
+  };
+  if (typeof db.transaction === "function") await db.transaction(apply);
+  else await apply(db);
 }
 
 export async function upsertMt5ClosedPosition(userId: number, accountId: number, value: LiveBase & { closePrice: number; realizedPnl: number; result: "WIN" | "LOSS" | "BREAK_EVEN"; closeTime: Date }) {
   const db = await requireDb();
-  const existing = await db.select({ status: mt5LivePositions.status, openTime: mt5LivePositions.openTime, closeTime: mt5LivePositions.closeTime }).from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.ticket, value.ticket))).limit(1);
-  if (existing[0]?.status === "CLOSED" && existing[0].closeTime && existing[0].closeTime.getTime() >= value.closeTime.getTime()) return;
-  if (existing[0]?.status === "CLOSED" && !existing[0].closeTime) return;
-  const record = {
+  const apply = async (tx: Mt5WriteDb) => {
+    const existing = await tx.select({ status: mt5LivePositions.status, openTime: mt5LivePositions.openTime, closeTime: mt5LivePositions.closeTime }).from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.ticket, value.ticket))).limit(1);
+    if (existing[0]?.status === "OPEN" && existing[0].openTime && existing[0].openTime.getTime() > value.openTime.getTime()) return;
+    if (existing[0]?.status === "CLOSED" && existing[0].closeTime && existing[0].closeTime.getTime() >= value.closeTime.getTime()) return;
+    if (existing[0]?.status === "CLOSED" && !existing[0].closeTime) return;
+    const record = {
     accountId,
     ticket: value.ticket,
     symbol: value.symbol,
@@ -273,6 +281,9 @@ export async function upsertMt5ClosedPosition(userId: number, accountId: number,
     status: "CLOSED" as const,
     updatedAt: new Date(),
   };
-  await db.insert(mt5LivePositions).values(record).onDuplicateKeyUpdate({ set: record });
-  await syncMt5PositionToTradeLog(userId, accountId, { ...value, pnl: value.realizedPnl, result: value.result, tradeTime: value.closeTime });
+    await tx.insert(mt5LivePositions).values(record).onDuplicateKeyUpdate({ set: record });
+    await syncMt5PositionToTradeLog(tx, userId, accountId, { ...value, pnl: value.realizedPnl, result: value.result, tradeTime: value.closeTime });
+  };
+  if (typeof db.transaction === "function") await db.transaction(apply);
+  else await apply(db);
 }

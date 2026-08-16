@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ getActive: vi.fn(), touch: vi.fn(), open: vi.fn(), close: vi.fn(), summary: vi.fn(), completeHistory: vi.fn(), historyAttempt: vi.fn(), historyAccepted: vi.fn(), historyFailure: vi.fn() }));
 vi.mock("./mt5Db", () => ({ getActiveMt5Connection: mocks.getActive, touchMt5Connection: mocks.touch, upsertMt5OpenPosition: mocks.open, upsertMt5ClosedPosition: mocks.close, updateMt5AccountSummary: mocks.summary, completeMt5HistorySync: mocks.completeHistory, recordMt5HistoryAttempt: mocks.historyAttempt, recordMt5HistoryAccepted: mocks.historyAccepted, recordMt5HistoryFailure: mocks.historyFailure }));
 
-import { processMt5Payload } from "./mt5Ingest";
+import { getMt5RateLimiterSize, processMt5Payload } from "./mt5Ingest";
 
 const key = (suffix: string) => `mt5_live_key_${suffix.padEnd(32, "x")}`;
 const openPayload = (api_key = key("open")) => ({ event: "open" as const, api_key, ticket: "123456789", symbol: "XAUUSD", direction: "Buy", lots: 0.01, open_price: 3285.5, sl_price: 3275, tp_price: 3310, risk_usd: 45, reward_usd: 200, rr_ratio: 4.44, floating_pnl: 12.5, open_time: "2026-07-11 09:30:00" });
@@ -71,5 +71,26 @@ describe("MT5 EA ingest", () => {
     const burstKey = key("rate");
     for (let index = 0; index < 5; index += 1) await expect(processMt5Payload({ event: "ping", api_key: burstKey })).resolves.toMatchObject({ status: 200 });
     await expect(processMt5Payload({ event: "ping", api_key: burstKey })).resolves.toEqual({ status: 429, body: { ok: false, code: "RATE_LIMITED" } });
+  });
+
+  it("rejects zero volume, non-positive prices, and a close timestamp before open", async () => {
+    await expect(processMt5Payload({ ...openPayload(key("bad-volume")), lots: 0 })).rejects.toThrow();
+    await expect(processMt5Payload({ ...openPayload(key("bad-open-price")), open_price: -1 })).rejects.toThrow();
+    const { floating_pnl, open_time, ...base } = openPayload(key("bad-close-price"));
+    await expect(processMt5Payload({ ...base, event: "close", close_price: 0, realized_pnl: 1, result: "Win", close_time: "2026-07-11 08:30:00", open_time })).rejects.toThrow();
+  });
+
+  it("keeps naive timestamps on the existing UTC+5 interpretation", async () => {
+    await expect(processMt5Payload(openPayload(key("utc-plus-five")))).resolves.toMatchObject({ status: 200 });
+    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ openTime: new Date("2026-07-11T04:30:00Z") }));
+  });
+
+  it("caps limiter state when ten thousand random invalid keys arrive", async () => {
+    mocks.getActive.mockResolvedValue(null);
+    for (let index = 0; index < 10_100; index += 1) {
+      const invalidKey = `mt5_random_invalid_${index.toString().padStart(6, "0")}_xxxxxxxxxxxxxxxx`;
+      await expect(processMt5Payload({ event: "ping", api_key: invalidKey })).resolves.toMatchObject({ status: expect.any(Number) });
+    }
+    expect(getMt5RateLimiterSize()).toBeLessThanOrEqual(10_000);
   });
 });
