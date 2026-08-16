@@ -2,7 +2,7 @@ import { and, count, desc, eq } from "drizzle-orm";
 import { accounts, mt5Connections, mt5LivePositions, trades } from "../drizzle/schema";
 import { getDb } from "./db";
 import { getOwnedAccount } from "./goldDb";
-import { decryptMt5ApiKey, hashMt5ApiKey, maskMt5ApiKey, safeApiKeyEquals } from "./mt5Secrets";
+import { decryptMt5ApiKey, encryptMt5ApiKey, hashMt5ApiKey, maskMt5ApiKey, safeApiKeyEquals } from "./mt5Secrets";
 
 async function requireDb() {
   const db = await getDb();
@@ -105,7 +105,10 @@ export async function getActiveMt5Connection(apiKey: string) {
   for (const row of legacyRows) {
     if (row.apiKeyHash) continue;
     try {
-      if (safeApiKeyEquals(decryptMt5ApiKey(row.apiKey), apiKey)) return { ...row, apiKey: apiKey };
+      if (safeApiKeyEquals(decryptMt5ApiKey(row.apiKey), apiKey)) {
+        await db.update(mt5Connections).set({ apiKey: encryptMt5ApiKey(apiKey), apiKeyHash: hashMt5ApiKey(apiKey) }).where(eq(mt5Connections.id, row.id));
+        return { ...row, apiKey: apiKey };
+      }
     } catch {
       // Ignore an unreadable legacy record and continue checking other active connections.
     }
