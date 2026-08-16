@@ -13,11 +13,33 @@ import { pktSession, syncStoredMt5PositionsToTradeLog, upsertMt5ClosedPosition, 
 
 function createFakeDb() {
   const rowsFor = (table: unknown) => table === mt5LivePositions ? fake.state.positions : fake.state.trades;
+  const conditionPairs = (condition: any) => {
+    const pairs: Array<[string, unknown]> = [];
+    const flattened: any[] = [];
+    const flatten = (node: any): void => {
+      if (!node) return;
+      if (Array.isArray(node)) { node.forEach(flatten); return; }
+      if (node.queryChunks) { flatten(node.queryChunks); return; }
+      flattened.push(node);
+    };
+    flatten(condition);
+    let currentColumn: string | undefined;
+    for (const node of flattened) {
+      if (node.name && node.table && typeof node.name === "string") currentColumn = node.name;
+      if (node.constructor?.name === "Param" && currentColumn) pairs.push([currentColumn, node.value]);
+    }
+    return pairs;
+  };
   const createSelect = () => {
     const chain: any = {
       rows: [] as any[],
       from(table: unknown) { chain.rows = rowsFor(table).slice(); return chain; },
-      where() { return chain; },
+      where(condition?: any) {
+        if (!condition) return chain;
+        const pairs = conditionPairs(condition);
+        chain.rows = chain.rows.filter(row => pairs.every(([column, value]) => String(row[column]) === String(value)));
+        return chain;
+      },
       orderBy() { return chain; },
       limit(size: number) { chain.rows = chain.rows.slice(0, size); return chain; },
       offset(size: number) { chain.rows = chain.rows.slice(size); return chain; },
@@ -137,6 +159,16 @@ describe("MT5 position and journal idempotency", () => {
 
     expect(fake.state.positions).toHaveLength(1);
     expect(fake.state.trades).toHaveLength(1);
+  });
+
+  it("keeps identical MT5 tickets independent across trading accounts", async () => {
+    await upsertMt5ClosedPosition(12, 7, { ...base, closePrice: 3310, realizedPnl: 100, result: "WIN", closeTime: new Date("2026-07-11T05:30:00Z") });
+    await upsertMt5ClosedPosition(13, 8, { ...base, closePrice: 3290, realizedPnl: -100, result: "LOSS", closeTime: new Date("2026-07-11T05:30:00Z") });
+
+    expect(fake.state.positions).toHaveLength(2);
+    expect(fake.state.positions.map(row => row.accountId)).toEqual([7, 8]);
+    expect(fake.state.trades).toHaveLength(2);
+    expect(fake.state.trades.map(row => [row.accountId, row.mt5Ticket])).toEqual([[7, 1001n], [8, 1001n]]);
   });
 });
 

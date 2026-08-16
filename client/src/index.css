@@ -71,7 +71,17 @@
   --gj-gold: #9b6915;
   --gj-gold-text: #80530b;
   --gj-shadow: rgba(26, 44, 62, .11);
+  --profit: #1f7a4d;
+  --loss: #b6403b;
+  --warning: #a56c13;
+  --risk: #8a4f17;
+  --neutral: #526273;
+  --chart-grid: rgba(21, 32, 43, .10);
+  --chart-axis: #526273;
+  --chart-tooltip: #ffffff;
+  --chart-tooltip-border: #c9d3df;
 }
+
 
 .dark {
   --background: #10141a;
@@ -106,7 +116,17 @@
   --gj-gold: #e9b64b;
   --gj-gold-text: #f0cf79;
   --gj-shadow: rgba(0, 0, 0, .18);
+  --profit: #63d39a;
+  --loss: #ef7772;
+  --warning: #e9b64b;
+  --risk: #f2a65a;
+  --neutral: #9aa6b1;
+  --chart-grid: rgba(255, 255, 255, .10);
+  --chart-axis: #9aa6b1;
+  --chart-tooltip: #171d24;
+  --chart-tooltip-border: #303a45;
 }
+
 
 * { border-color: var(--border); }
 html { background: var(--background); color-scheme: light; }
