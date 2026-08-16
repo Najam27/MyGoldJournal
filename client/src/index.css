@@ -7,6 +7,7 @@
 @import "./light-audit-fix.css";
 @import "./flexible-goals.css";
 @import "./mt5-live.css";
+@import "./frontend-polish.css";
 
 @custom-variant dark (&:is(.dark *));
 
