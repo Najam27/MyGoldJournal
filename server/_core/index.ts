@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { registerMt5Ingest } from "../mt5Ingest";
 import { getActiveMt5Connection, recordMt5HistoryFailure } from "../mt5Db";
 import { createContext } from "./context";
+import { assertProductionConfiguration, ENV } from "./env";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -31,11 +32,21 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  assertProductionConfiguration();
   const app = express();
   const server = createServer(app);
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.disable("x-powered-by");
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    if (ENV.isProduction) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    next();
+  });
+  // Keep JSON requests bounded; MT5 history batches are separately limited to 50 positions.
+  app.use(express.json({ limit: "2mb", strict: true }));
+  app.use(express.urlencoded({ limit: "256kb", extended: true, parameterLimit: 100 }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMt5Ingest(app);

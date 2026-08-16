@@ -43,6 +43,13 @@
       "when": 1786621225557,
       "tag": "0005_gifted_retro_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786630000000,
+      "tag": "0006_secure_mt5_keys_and_indexes",
+      "breakpoints": true
     }
   ]
 }

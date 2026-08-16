@@ -1,8 +1,10 @@
+import { createHash } from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { completeMt5HistorySync, getActiveMt5Connection, recordMt5HistoryAccepted, recordMt5HistoryAttempt, recordMt5HistoryFailure, touchMt5Connection, updateMt5AccountSummary, upsertMt5ClosedPosition, upsertMt5OpenPosition } from "./mt5Db";
 
-const numeric = z.coerce.number().finite();
+const numeric = z.coerce.number().finite().min(-1_000_000_000_000).max(1_000_000_000_000);
+const apiKey = z.string().trim().min(24).max(96).regex(/^[A-Za-z0-9_-]+$/);
 const ticket = z.union([z.string().regex(/^\d+$/), z.number().int().nonnegative()]).transform(value => BigInt(value));
 const timestamp = z.string().trim().min(8).max(40).transform(value => {
   const mqlDate = value.replace(/^(\d{4})\.(\d{2})\.(\d{2})/, "$1-$2-$3");
@@ -15,23 +17,35 @@ const direction = z.enum(["Buy", "Sell", "BUY", "SELL"]).transform(value => valu
 const result = z.enum(["Win", "Loss", "Break-even", "WIN", "LOSS", "BREAK_EVEN"]).transform(value => value === "Win" || value === "WIN" ? "WIN" : value === "Loss" || value === "LOSS" ? "LOSS" : "BREAK_EVEN" as const);
 
 const positionBase = z.object({ ticket, symbol: z.string().trim().min(1).max(32), direction, lots: numeric.min(0), open_price: numeric, sl_price: numeric.optional().default(0), tp_price: numeric.optional().default(0), risk_usd: numeric.min(0), reward_usd: numeric.min(0), rr_ratio: numeric.min(0) });
-const base = positionBase.extend({ api_key: z.string().trim().min(24).max(96) });
+const base = positionBase.extend({ api_key: apiKey });
 const closedFields = z.object({ close_price: numeric, realized_pnl: numeric, result, close_time: timestamp, open_time: timestamp.optional() });
 const closedPosition = positionBase.merge(closedFields);
 const closedEvent = base.merge(closedFields).extend({ event: z.literal("close") });
 export const mt5Payload = z.discriminatedUnion("event", [
-  z.object({ event: z.literal("ping"), api_key: z.string().trim().min(24).max(96) }),
-  z.object({ event: z.literal("summary"), api_key: z.string().trim().min(24).max(96), mt5_login: ticket, broker_server: z.string().trim().min(1).max(160), currency: z.string().trim().min(1).max(16), balance: numeric, equity: numeric, margin: numeric.min(0), free_margin: numeric, floating_pnl: numeric }),
+  z.object({ event: z.literal("ping"), api_key: apiKey }),
+  z.object({ event: z.literal("summary"), api_key: apiKey, mt5_login: ticket, broker_server: z.string().trim().min(1).max(160), currency: z.string().trim().min(1).max(16), balance: numeric, equity: numeric, margin: numeric.min(0), free_margin: numeric, floating_pnl: numeric }),
   base.extend({ event: z.literal("open"), floating_pnl: numeric, open_time: timestamp }),
   closedEvent,
-  z.object({ event: z.literal("history_batch"), api_key: z.string().trim().min(24).max(96), positions: z.array(closedPosition).max(50), complete: z.boolean().default(false) }),
+  z.object({ event: z.literal("history_batch"), api_key: apiKey, positions: z.array(closedPosition).max(50), complete: z.boolean().default(false) }),
 ]);
 
+const RATE_WINDOW_MS = 1_000;
+const MAX_RATE_KEYS = 10_000;
 const requests = new Map<string, { startedAt: number; count: number }>();
+let lastRateSweep = 0;
 function canAccept(key: string) {
   const now = Date.now();
-  const current = requests.get(key);
-  if (!current || now - current.startedAt >= 1_000) { requests.set(key, { startedAt: now, count: 1 }); return true; }
+  if (now - lastRateSweep >= RATE_WINDOW_MS) {
+    for (const [bucket, value] of Array.from(requests.entries())) if (now - value.startedAt >= RATE_WINDOW_MS) requests.delete(bucket);
+    lastRateSweep = now;
+  }
+  const bucketKey = createHash("sha256").update(key, "utf8").digest("hex");
+  const current = requests.get(bucketKey);
+  if (!current || now - current.startedAt >= RATE_WINDOW_MS) {
+    if (!current && requests.size >= MAX_RATE_KEYS) return false;
+    requests.set(bucketKey, { startedAt: now, count: 1 });
+    return true;
+  }
   if (current.count >= 5) return false;
   current.count += 1;
   return true;
@@ -102,7 +116,7 @@ export function registerMt5Ingest(app: Express) {
         res.status(400).json({ ok: false, code: "INVALID_PAYLOAD", details });
         return;
       }
-      console.error("[MT5] ingest failed", error);
+      console.error("[MT5] ingest failed", error instanceof Error ? error.message : "unknown error");
       res.status(503).json({ ok: false, code: "SYNC_UNAVAILABLE" });
     }
   });

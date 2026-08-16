@@ -75,7 +75,7 @@ export const cashMovements = mysqlTable(
     note: text("note"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
-  table => [index("gj_cash_owner_account_idx").on(table.userId, table.accountId)],
+  table => [index("gj_cash_owner_account_idx").on(table.userId, table.accountId), index("gj_cash_owner_account_date_idx").on(table.userId, table.accountId, table.movementDate)],
 );
 
 export const goals = mysqlTable(
@@ -117,7 +117,7 @@ export const skippedTrades = mysqlTable(
     notes: text("notes"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
-  table => [index("gj_skipped_owner_account_idx").on(table.userId, table.accountId)],
+  table => [index("gj_skipped_owner_account_idx").on(table.userId, table.accountId), index("gj_skipped_owner_account_date_idx").on(table.userId, table.accountId, table.tradeDate)],
 );
 
 export const dailyPlans = mysqlTable(
@@ -196,7 +196,7 @@ export const notificationHistory = mysqlTable(
     readAt: timestamp("readAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
-  table => [index("gj_notification_owner_idx").on(table.userId, table.createdAt)],
+  table => [index("gj_notification_owner_idx").on(table.userId, table.createdAt), index("gj_notification_owner_account_type_idx").on(table.userId, table.accountId, table.type)],
 );
 
 export const mt5Connections = mysqlTable(
@@ -205,7 +205,8 @@ export const mt5Connections = mysqlTable(
     id: int("id").autoincrement().primaryKey(),
     userId: int("userId").notNull(),
     accountId: int("accountId").notNull(),
-    apiKey: varchar("apiKey", { length: 96 }).notNull().unique(),
+    apiKey: varchar("apiKey", { length: 512 }).notNull().unique(),
+    apiKeyHash: varchar("apiKeyHash", { length: 64 }),
     label: varchar("label", { length: 120 }).default("MT5 Connection").notNull(),
     active: boolean("active").default(true).notNull(),
     lastPing: timestamp("lastPing"),
@@ -226,7 +227,7 @@ export const mt5Connections = mysqlTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
-  table => [uniqueIndex("gj_mt5_connection_account_unique").on(table.accountId), index("gj_mt5_connection_owner_idx").on(table.userId, table.accountId)],
+  table => [uniqueIndex("gj_mt5_connection_account_unique").on(table.accountId), uniqueIndex("gj_mt5_connection_key_hash_unique").on(table.apiKeyHash), index("gj_mt5_connection_owner_idx").on(table.userId, table.accountId)],
 );
 
 export const mt5LivePositions = mysqlTable(

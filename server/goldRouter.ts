@@ -9,6 +9,7 @@ import { getMt5History, getMt5Workspace, syncStoredMt5PositionsToTradeLog } from
 import { toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 import { protectedProcedure, router } from "./_core/trpc";
 import { storageGetSignedUrl, storagePut } from "./storage";
+import { encryptMt5ApiKey, hashMt5ApiKey } from "./mt5Secrets";
 
 const optionalText = (max = 5000) => z.string().trim().max(max).optional().default("");
 const accountIdInput = z.object({ accountId: z.number().int().positive() });
@@ -95,15 +96,19 @@ export const goldRouter = router({
       if (ownedAccounts.length < 2) throw new Error("Create another account before removing your only account.");
       const replacement = ownedAccounts.find(account => account.id !== input.accountId);
       if (!replacement) throw new Error("A replacement account could not be selected.");
-      await db.delete(notificationHistory).where(and(eq(notificationHistory.userId, ctx.user.id), eq(notificationHistory.accountId, input.accountId)));
-      await db.delete(dailyPlans).where(and(eq(dailyPlans.userId, ctx.user.id), eq(dailyPlans.accountId, input.accountId)));
-      await db.delete(skippedTrades).where(and(eq(skippedTrades.userId, ctx.user.id), eq(skippedTrades.accountId, input.accountId)));
-      await db.delete(cashMovements).where(and(eq(cashMovements.userId, ctx.user.id), eq(cashMovements.accountId, input.accountId)));
-      await db.delete(goals).where(and(eq(goals.userId, ctx.user.id), eq(goals.accountId, input.accountId)));
-      await db.delete(mt5LivePositions).where(eq(mt5LivePositions.accountId, input.accountId));
-      await db.delete(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId)));
-      await db.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
-      await db.delete(accounts).where(and(eq(accounts.userId, ctx.user.id), eq(accounts.id, input.accountId)));
+      const removeChildren = async (tx: Pick<typeof db, "delete">) => {
+        await tx.delete(notificationHistory).where(and(eq(notificationHistory.userId, ctx.user.id), eq(notificationHistory.accountId, input.accountId)));
+        await tx.delete(dailyPlans).where(and(eq(dailyPlans.userId, ctx.user.id), eq(dailyPlans.accountId, input.accountId)));
+        await tx.delete(skippedTrades).where(and(eq(skippedTrades.userId, ctx.user.id), eq(skippedTrades.accountId, input.accountId)));
+        await tx.delete(cashMovements).where(and(eq(cashMovements.userId, ctx.user.id), eq(cashMovements.accountId, input.accountId)));
+        await tx.delete(goals).where(and(eq(goals.userId, ctx.user.id), eq(goals.accountId, input.accountId)));
+        await tx.delete(mt5LivePositions).where(eq(mt5LivePositions.accountId, input.accountId));
+        await tx.delete(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId)));
+        await tx.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
+        await tx.delete(accounts).where(and(eq(accounts.userId, ctx.user.id), eq(accounts.id, input.accountId)));
+      };
+      if (typeof db.transaction === "function") await db.transaction(removeChildren);
+      else await removeChildren(db);
       return { success: true, replacementAccountId: replacement.id };
     }),
   }),
@@ -123,8 +128,8 @@ export const goldRouter = router({
       const existing = await db.select({ id: mt5Connections.id }).from(mt5Connections).where(eq(mt5Connections.accountId, input.accountId)).limit(1);
       if (existing[0]) throw new Error("This Gold Journal account already has an MT5 connection. Edit or replace it from MT5 Live.");
       const apiKey = randomBytes(32).toString("base64url");
-      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey, active: true });
-      return { id: Number(inserted[0].insertId) };
+      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey: encryptMt5ApiKey(apiKey), apiKeyHash: hashMt5ApiKey(apiKey), active: true });
+      return { id: Number(inserted[0].insertId), apiKey };
     }),
     setConnectionActive: protectedProcedure.input(z.object({ connectionId: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
       const connection = await ownMt5Connection(ctx.user.id, input.connectionId);
