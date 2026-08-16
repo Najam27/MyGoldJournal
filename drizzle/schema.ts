@@ -1,40 +1,67 @@
-import { bigint, boolean, decimal, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import {
+  bigint,
+  boolean,
+  decimal,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+  serial,
+} from "drizzle-orm/pg-core";
 
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+const updatedAt = () => timestamp("updatedAt", { withTimezone: true, mode: "date" }).defaultNow().notNull().$onUpdate(() => new Date());
+const createdAt = () => timestamp("createdAt", { withTimezone: true, mode: "date" }).defaultNow().notNull();
+const instant = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
+
+export const userRole = pgEnum("user_role", ["user", "admin"]);
+export const tradeDirection = pgEnum("trade_direction", ["BUY", "SELL"]);
+export const tradeResult = pgEnum("trade_result", ["WIN", "LOSS", "BREAK_EVEN", "OPEN"]);
+export const cashMovementType = pgEnum("cash_movement_type", ["DEPOSIT", "WITHDRAW"]);
+export const goalPeriod = pgEnum("goal_period", ["DAILY", "WEEKLY", "MONTHLY"]);
+export const goalComparison = pgEnum("goal_comparison", ["GTE", "LTE"]);
+export const mt5PositionStatus = pgEnum("mt5_position_status", ["OPEN", "CLOSED"]);
+export const mt5PositionResult = pgEnum("mt5_position_result", ["WIN", "LOSS", "BREAK_EVEN"]);
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  role: userRole("role").default("user").notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+  lastSignedIn: instant("lastSignedIn").defaultNow().notNull(),
 });
 
-export const accounts = mysqlTable(
+export const accounts = pgTable(
   "gj_accounts",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
     name: varchar("name", { length: 100 }).notNull(),
     startingBalance: decimal("startingBalance", { precision: 14, scale: 2 }).default("0.00").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   table => [index("gj_accounts_user_idx").on(table.userId)],
 );
 
-export const trades = mysqlTable(
+export const trades = pgTable(
   "gj_trades",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    accountId: int("accountId").notNull(),
-    tradeDate: timestamp("tradeDate").notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    accountId: integer("accountId").notNull(),
+    tradeDate: instant("tradeDate").notNull(),
     session: varchar("session", { length: 40 }).notNull(),
-    direction: mysqlEnum("direction", ["BUY", "SELL"]).notNull(),
-    result: mysqlEnum("result", ["WIN", "LOSS", "BREAK_EVEN", "OPEN"]).notNull(),
+    direction: tradeDirection("direction").notNull(),
+    result: tradeResult("result").notNull(),
     level: varchar("level", { length: 100 }).default(""),
     timeframe: varchar("timeframe", { length: 20 }).default(""),
     setupQuality: varchar("setupQuality", { length: 40 }).default(""),
@@ -46,7 +73,7 @@ export const trades = mysqlTable(
     tpPlacement: varchar("tpPlacement", { length: 60 }).default(""),
     mistake: varchar("mistake", { length: 80 }).default(""),
     holdQuality: varchar("holdQuality", { length: 60 }).default(""),
-    patienceScore: int("patienceScore"),
+    patienceScore: integer("patienceScore"),
     risk: decimal("risk", { precision: 14, scale: 2 }),
     reward: decimal("reward", { precision: 14, scale: 2 }),
     pnl: decimal("pnl", { precision: 14, scale: 2 }).default("0.00").notNull(),
@@ -57,158 +84,153 @@ export const trades = mysqlTable(
     screenshotKey: varchar("screenshotKey", { length: 500 }),
     screenshotName: varchar("screenshotName", { length: 255 }),
     mt5Ticket: bigint("mt5Ticket", { mode: "bigint" }),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   table => [index("gj_trades_owner_account_date_idx").on(table.userId, table.accountId, table.tradeDate), uniqueIndex("gj_trades_mt5_ticket_unique").on(table.accountId, table.mt5Ticket)],
 );
 
-export const cashMovements = mysqlTable(
+export const cashMovements = pgTable(
   "gj_cash_movements",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    accountId: int("accountId").notNull(),
-    movementDate: timestamp("movementDate").notNull(),
-    type: mysqlEnum("type", ["DEPOSIT", "WITHDRAW"]).notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    accountId: integer("accountId").notNull(),
+    movementDate: instant("movementDate").notNull(),
+    type: cashMovementType("type").notNull(),
     amount: decimal("amount", { precision: 14, scale: 2 }).notNull(),
     note: text("note"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    createdAt: createdAt(),
   },
-  table => [index("gj_cash_owner_account_idx").on(table.userId, table.accountId)],
+  table => [index("gj_cash_owner_account_idx").on(table.userId, table.accountId), index("gj_cash_owner_account_date_idx").on(table.userId, table.accountId, table.movementDate)],
 );
 
-export const goals = mysqlTable(
+export const goals = pgTable(
   "gj_goals",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    accountId: int("accountId").notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    accountId: integer("accountId").notNull(),
     name: varchar("name", { length: 120 }).notNull(),
     description: text("description"),
-    period: mysqlEnum("period", ["DAILY", "WEEKLY", "MONTHLY"]).notNull(),
+    period: goalPeriod("period").notNull(),
     metric: varchar("metric", { length: 80 }).notNull(),
-    comparison: mysqlEnum("comparison", ["GTE", "LTE"]).notNull(),
+    comparison: goalComparison("comparison").notNull(),
     target: decimal("target", { precision: 14, scale: 2 }).notNull(),
     notify: boolean("notify").default(true).notNull(),
     active: boolean("active").default(true).notNull(),
     isCustom: boolean("isCustom").default(false).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   table => [index("gj_goals_owner_account_idx").on(table.userId, table.accountId)],
 );
 
-export const skippedTrades = mysqlTable(
+export const skippedTrades = pgTable(
   "gj_skipped_trades",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    accountId: int("accountId").notNull(),
-    tradeDate: timestamp("tradeDate").notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    accountId: integer("accountId").notNull(),
+    tradeDate: instant("tradeDate").notNull(),
     session: varchar("session", { length: 40 }).notNull(),
     level: varchar("level", { length: 100 }).default(""),
     timeframe: varchar("timeframe", { length: 20 }).default(""),
-    direction: mysqlEnum("direction", ["BUY", "SELL"]).notNull(),
+    direction: tradeDirection("direction").notNull(),
     skipReason: varchar("skipReason", { length: 120 }).notNull(),
-    confidence: int("confidence").notNull(),
+    confidence: integer("confidence").notNull(),
     outcome: varchar("outcome", { length: 80 }).notNull(),
     estimatedMissed: decimal("estimatedMissed", { precision: 14, scale: 2 }).default("0.00").notNull(),
     notes: text("notes"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    createdAt: createdAt(),
   },
-  table => [index("gj_skipped_owner_account_idx").on(table.userId, table.accountId)],
+  table => [index("gj_skipped_owner_account_idx").on(table.userId, table.accountId), index("gj_skipped_owner_account_date_idx").on(table.userId, table.accountId, table.tradeDate)],
 );
 
-export const dailyPlans = mysqlTable(
+export const dailyPlans = pgTable(
   "gj_daily_plans",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    accountId: int("accountId").notNull(),
-    planDate: timestamp("planDate").notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    accountId: integer("accountId").notNull(),
+    planDate: instant("planDate").notNull(),
     preBias: varchar("preBias", { length: 40 }).default(""),
     marketContext: text("marketContext"),
     keyLevels: text("keyLevels"),
-    sessionFocus: json("sessionFocus"),
+    sessionFocus: jsonb("sessionFocus"),
     eventRisk: text("eventRisk"),
     longScenario: text("longScenario"),
     shortScenario: text("shortScenario"),
     noTradeCondition: text("noTradeCondition"),
     invalidationLevel: text("invalidationLevel"),
     riskLimit: varchar("riskLimit", { length: 40 }).default(""),
-    maxTrades: int("maxTrades"),
+    maxTrades: integer("maxTrades"),
     sizingPlan: text("sizingPlan"),
     planNotes: text("planNotes"),
-    rulesPlanned: json("rulesPlanned"),
+    rulesPlanned: jsonb("rulesPlanned"),
     emotionStart: text("emotionStart"),
     emotionEnd: text("emotionEnd"),
-    executionScore: int("executionScore"),
-    rulesFollowed: json("rulesFollowed"),
+    executionScore: integer("executionScore"),
+    rulesFollowed: jsonb("rulesFollowed"),
     whatWentWell: text("whatWentWell"),
     whatWentWrong: text("whatWentWrong"),
     executionNotes: text("executionNotes"),
     planDeviation: text("planDeviation"),
     lessons: text("lessons"),
     tomorrowFocus: text("tomorrowFocus"),
-    overallRating: int("overallRating"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    overallRating: integer("overallRating"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
-  table => [
-    uniqueIndex("gj_daily_plan_unique").on(table.userId, table.accountId, table.planDate),
-    index("gj_daily_plan_owner_account_idx").on(table.userId, table.accountId),
-  ],
+  table => [uniqueIndex("gj_daily_plan_unique").on(table.userId, table.accountId, table.planDate), index("gj_daily_plan_owner_account_idx").on(table.userId, table.accountId)],
 );
 
-export const optionLists = mysqlTable(
+export const optionLists = pgTable(
   "gj_option_lists",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
     category: varchar("category", { length: 80 }).notNull(),
     value: varchar("value", { length: 160 }).notNull(),
     active: boolean("active").default(true).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    createdAt: createdAt(),
   },
   table => [uniqueIndex("gj_option_list_unique").on(table.userId, table.category, table.value), index("gj_option_list_owner_idx").on(table.userId)],
 );
 
-export const notificationSettings = mysqlTable(
-  "gj_notification_settings",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().unique(),
-    goalAlerts: boolean("goalAlerts").default(true).notNull(),
-    emailAlerts: boolean("emailAlerts").default(false).notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-);
+export const notificationSettings = pgTable("gj_notification_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().unique(),
+  goalAlerts: boolean("goalAlerts").default(true).notNull(),
+  emailAlerts: boolean("emailAlerts").default(false).notNull(),
+  updatedAt: updatedAt(),
+});
 
-export const notificationHistory = mysqlTable(
+export const notificationHistory = pgTable(
   "gj_notification_history",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    accountId: int("accountId"),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    accountId: integer("accountId"),
     type: varchar("type", { length: 60 }).notNull(),
     message: text("message").notNull(),
-    readAt: timestamp("readAt"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    readAt: instant("readAt"),
+    createdAt: createdAt(),
   },
-  table => [index("gj_notification_owner_idx").on(table.userId, table.createdAt)],
+  table => [index("gj_notification_owner_idx").on(table.userId, table.createdAt), index("gj_notification_owner_account_type_idx").on(table.userId, table.accountId, table.type)],
 );
 
-export const mt5Connections = mysqlTable(
+export const mt5Connections = pgTable(
   "gj_mt5_connections",
   {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    accountId: int("accountId").notNull(),
-    apiKey: varchar("apiKey", { length: 96 }).notNull().unique(),
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    accountId: integer("accountId").notNull(),
+    apiKey: varchar("apiKey", { length: 512 }).notNull().unique(),
+    apiKeyHash: varchar("apiKeyHash", { length: 64 }),
     label: varchar("label", { length: 120 }).default("MT5 Connection").notNull(),
     active: boolean("active").default(true).notNull(),
-    lastPing: timestamp("lastPing"),
+    lastPing: instant("lastPing"),
     mt5Login: bigint("mt5Login", { mode: "bigint" }),
     brokerServer: varchar("brokerServer", { length: 160 }),
     currency: varchar("currency", { length: 16 }),
@@ -217,26 +239,26 @@ export const mt5Connections = mysqlTable(
     margin: decimal("margin", { precision: 14, scale: 2 }),
     freeMargin: decimal("freeMargin", { precision: 14, scale: 2 }),
     floatingPnl: decimal("floatingPnl", { precision: 14, scale: 2 }),
-    lastHistorySync: timestamp("lastHistorySync"),
-    historySyncedCount: int("historySyncedCount").default(0).notNull(),
-    lastHistoryAttempt: timestamp("lastHistoryAttempt"),
+    lastHistorySync: instant("lastHistorySync"),
+    historySyncedCount: integer("historySyncedCount").default(0).notNull(),
+    lastHistoryAttempt: instant("lastHistoryAttempt"),
     lastHistoryStatus: varchar("lastHistoryStatus", { length: 32 }),
     lastHistoryMessage: varchar("lastHistoryMessage", { length: 255 }),
-    lastHistoryBatchSize: int("lastHistoryBatchSize"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    lastHistoryBatchSize: integer("lastHistoryBatchSize"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
-  table => [uniqueIndex("gj_mt5_connection_account_unique").on(table.accountId), index("gj_mt5_connection_owner_idx").on(table.userId, table.accountId)],
+  table => [uniqueIndex("gj_mt5_connection_account_unique").on(table.accountId), uniqueIndex("gj_mt5_connection_key_hash_unique").on(table.apiKeyHash), index("gj_mt5_connection_owner_idx").on(table.userId, table.accountId)],
 );
 
-export const mt5LivePositions = mysqlTable(
+export const mt5LivePositions = pgTable(
   "gj_mt5_live_positions",
   {
-    id: int("id").autoincrement().primaryKey(),
-    accountId: int("accountId").notNull(),
+    id: serial("id").primaryKey(),
+    accountId: integer("accountId").notNull(),
     ticket: bigint("ticket", { mode: "bigint" }).notNull(),
     symbol: varchar("symbol", { length: 32 }).notNull(),
-    direction: mysqlEnum("direction", ["BUY", "SELL"]).notNull(),
+    direction: tradeDirection("direction").notNull(),
     lots: decimal("lots", { precision: 14, scale: 2 }).notNull(),
     openPrice: decimal("openPrice", { precision: 18, scale: 6 }).notNull(),
     closePrice: decimal("closePrice", { precision: 18, scale: 6 }),
@@ -247,11 +269,11 @@ export const mt5LivePositions = mysqlTable(
     rrRatio: decimal("rrRatio", { precision: 14, scale: 2 }).default("0.00").notNull(),
     floatingPnl: decimal("floatingPnl", { precision: 14, scale: 2 }).default("0.00").notNull(),
     realizedPnl: decimal("realizedPnl", { precision: 14, scale: 2 }),
-    result: mysqlEnum("result", ["WIN", "LOSS", "BREAK_EVEN"]),
-    openTime: timestamp("openTime").notNull(),
-    closeTime: timestamp("closeTime"),
-    status: mysqlEnum("status", ["OPEN", "CLOSED"]).default("OPEN").notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    result: mt5PositionResult("result"),
+    openTime: instant("openTime").notNull(),
+    closeTime: instant("closeTime"),
+    status: mt5PositionStatus("status").default("OPEN").notNull(),
+    updatedAt: updatedAt(),
   },
   table => [uniqueIndex("gj_mt5_live_account_ticket_unique").on(table.accountId, table.ticket), index("gj_mt5_live_account_status_idx").on(table.accountId, table.status, table.updatedAt)],
 );

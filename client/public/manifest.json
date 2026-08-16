@@ -8,15 +8,9 @@
   "theme_color": "#10141a",
   "icons": [
     {
-      "src": "/manus-storage/gold-journal-au-mark_de0e8ecf.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/manus-storage/gold-journal-au-mark_de0e8ecf.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%2310141a'/%3E%3Ccircle cx='256' cy='256' r='160' fill='none' stroke='%23e9b64b' stroke-width='24'/%3E%3Ctext x='256' y='290' fill='%23f5d98d' font-family='monospace' font-size='92' font-weight='700' text-anchor='middle'%3EAU%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

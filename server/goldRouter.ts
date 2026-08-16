@@ -9,6 +9,7 @@ import { getMt5History, getMt5Workspace, syncStoredMt5PositionsToTradeLog } from
 import { toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 import { protectedProcedure, router } from "./_core/trpc";
 import { storageGetSignedUrl, storagePut } from "./storage";
+import { encryptMt5ApiKey, hashMt5ApiKey } from "./mt5Secrets";
 
 const optionalText = (max = 5000) => z.string().trim().max(max).optional().default("");
 const accountIdInput = z.object({ accountId: z.number().int().positive() });
@@ -79,8 +80,8 @@ export const goldRouter = router({
   accounts: router({
     create: protectedProcedure.input(z.object({ name: z.string().trim().min(1).max(100), startingBalance: z.number().min(0).default(0) })).mutation(async ({ ctx, input }) => {
       const db = await dbOrThrow();
-      const inserted = await db.insert(accounts).values({ userId: ctx.user.id, name: input.name, startingBalance: input.startingBalance.toFixed(2) });
-      return { id: Number(inserted[0].insertId) };
+      const inserted = await db.insert(accounts).values({ userId: ctx.user.id, name: input.name, startingBalance: input.startingBalance.toFixed(2) }).returning({ id: accounts.id });
+      return { id: inserted[0]?.id };
     }),
     rename: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), name: z.string().trim().min(1).max(100) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
@@ -95,15 +96,19 @@ export const goldRouter = router({
       if (ownedAccounts.length < 2) throw new Error("Create another account before removing your only account.");
       const replacement = ownedAccounts.find(account => account.id !== input.accountId);
       if (!replacement) throw new Error("A replacement account could not be selected.");
-      await db.delete(notificationHistory).where(and(eq(notificationHistory.userId, ctx.user.id), eq(notificationHistory.accountId, input.accountId)));
-      await db.delete(dailyPlans).where(and(eq(dailyPlans.userId, ctx.user.id), eq(dailyPlans.accountId, input.accountId)));
-      await db.delete(skippedTrades).where(and(eq(skippedTrades.userId, ctx.user.id), eq(skippedTrades.accountId, input.accountId)));
-      await db.delete(cashMovements).where(and(eq(cashMovements.userId, ctx.user.id), eq(cashMovements.accountId, input.accountId)));
-      await db.delete(goals).where(and(eq(goals.userId, ctx.user.id), eq(goals.accountId, input.accountId)));
-      await db.delete(mt5LivePositions).where(eq(mt5LivePositions.accountId, input.accountId));
-      await db.delete(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId)));
-      await db.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
-      await db.delete(accounts).where(and(eq(accounts.userId, ctx.user.id), eq(accounts.id, input.accountId)));
+      const removeChildren = async (tx: Pick<typeof db, "delete">) => {
+        await tx.delete(notificationHistory).where(and(eq(notificationHistory.userId, ctx.user.id), eq(notificationHistory.accountId, input.accountId)));
+        await tx.delete(dailyPlans).where(and(eq(dailyPlans.userId, ctx.user.id), eq(dailyPlans.accountId, input.accountId)));
+        await tx.delete(skippedTrades).where(and(eq(skippedTrades.userId, ctx.user.id), eq(skippedTrades.accountId, input.accountId)));
+        await tx.delete(cashMovements).where(and(eq(cashMovements.userId, ctx.user.id), eq(cashMovements.accountId, input.accountId)));
+        await tx.delete(goals).where(and(eq(goals.userId, ctx.user.id), eq(goals.accountId, input.accountId)));
+        await tx.delete(mt5LivePositions).where(eq(mt5LivePositions.accountId, input.accountId));
+        await tx.delete(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId)));
+        await tx.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
+        await tx.delete(accounts).where(and(eq(accounts.userId, ctx.user.id), eq(accounts.id, input.accountId)));
+      };
+      if (typeof db.transaction === "function") await db.transaction(removeChildren);
+      else await removeChildren(db);
       return { success: true, replacementAccountId: replacement.id };
     }),
   }),
@@ -123,8 +128,8 @@ export const goldRouter = router({
       const existing = await db.select({ id: mt5Connections.id }).from(mt5Connections).where(eq(mt5Connections.accountId, input.accountId)).limit(1);
       if (existing[0]) throw new Error("This Gold Journal account already has an MT5 connection. Edit or replace it from MT5 Live.");
       const apiKey = randomBytes(32).toString("base64url");
-      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey, active: true });
-      return { id: Number(inserted[0].insertId) };
+      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey: encryptMt5ApiKey(apiKey), apiKeyHash: hashMt5ApiKey(apiKey), active: true }).returning({ id: mt5Connections.id });
+      return { id: inserted[0]?.id, apiKey };
     }),
     setConnectionActive: protectedProcedure.input(z.object({ connectionId: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
       const connection = await ownMt5Connection(ctx.user.id, input.connectionId);
@@ -174,8 +179,8 @@ export const goldRouter = router({
         risk: input.risk?.toFixed(2) ?? null, reward: input.reward?.toFixed(2) ?? null, pnl: input.pnl.toFixed(2),
         notes: input.notes, emotionBefore: input.emotionBefore, emotionDuring: input.emotionDuring, emotionAfter: input.emotionAfter,
         mt5Ticket: input.mt5Ticket ? BigInt(input.mt5Ticket) : null,
-      });
-      return { id: Number(inserted[0].insertId) };
+      }).returning({ id: trades.id });
+      return { id: inserted[0]?.id };
     }),
     update: protectedProcedure.input(tradeInput.extend({ tradeId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const current = await ownsTrade(ctx.user.id, input.tradeId);
@@ -227,8 +232,8 @@ export const goldRouter = router({
     create: protectedProcedure.input(goalInput).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
-      const inserted = await db.insert(goals).values({ ...input, userId: ctx.user.id, target: input.target.toFixed(2), isCustom: true });
-      return { success: true, id: Number(inserted[0].insertId) };
+      const inserted = await db.insert(goals).values({ ...input, userId: ctx.user.id, target: input.target.toFixed(2), isCustom: true }).returning({ id: goals.id });
+      return { success: true, id: inserted[0]?.id };
     }),
     update: protectedProcedure.input(goalInput.safeExtend({ goalId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const existing = await ownGoal(ctx.user.id, input.goalId);
@@ -259,7 +264,10 @@ export const goldRouter = router({
     }),
     add: protectedProcedure.input(z.object({ category: z.string().trim().min(1).max(80), value: z.string().trim().min(1).max(160) })).mutation(async ({ ctx, input }) => {
       const db = await dbOrThrow();
-      await db.insert(optionLists).values({ userId: ctx.user.id, category: input.category, value: input.value }).onDuplicateKeyUpdate({ set: { active: true } });
+      await db.insert(optionLists).values({ userId: ctx.user.id, category: input.category, value: input.value }).onConflictDoUpdate({
+        target: [optionLists.userId, optionLists.category, optionLists.value],
+        set: { active: true },
+      });
       return { success: true };
     }),
     setActive: protectedProcedure.input(z.object({ optionId: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
@@ -277,7 +285,10 @@ export const goldRouter = router({
     }),
     updateSettings: protectedProcedure.input(z.object({ goalAlerts: z.boolean(), emailAlerts: z.boolean() })).mutation(async ({ ctx, input }) => {
       const db = await dbOrThrow();
-      await db.insert(notificationSettings).values({ userId: ctx.user.id, ...input }).onDuplicateKeyUpdate({ set: input });
+      await db.insert(notificationSettings).values({ userId: ctx.user.id, ...input }).onConflictDoUpdate({
+        target: notificationSettings.userId,
+        set: input,
+      });
       return { success: true };
     }),
     recordGoalAlerts: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), alerts: z.array(z.object({ goalId: z.number().int().positive(), status: z.enum(["AT_RISK", "BREACHED", "MET"]), cycleKey: z.string().min(4).max(24), message: z.string().trim().min(1).max(800) })).max(20) })).mutation(async ({ ctx, input }) => {
@@ -316,7 +327,10 @@ export const goldRouter = router({
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
       const record = { userId: ctx.user.id, accountId: input.accountId, planDate: new Date(input.planDate), preBias: input.preBias, marketContext: input.marketContext, keyLevels: input.keyLevels, sessionFocus: input.sessionFocus, eventRisk: input.eventRisk, longScenario: input.longScenario, shortScenario: input.shortScenario, noTradeCondition: input.noTradeCondition, invalidationLevel: input.invalidationLevel, riskLimit: input.riskLimit, maxTrades: input.maxTrades, sizingPlan: input.sizingPlan, planNotes: input.planNotes, rulesPlanned: input.rulesPlanned, emotionStart: input.emotionStart.join("|"), emotionEnd: input.emotionEnd.join("|"), executionScore: input.executionScore, rulesFollowed: input.rulesFollowed, whatWentWell: input.whatWentWell, whatWentWrong: input.whatWentWrong, executionNotes: input.executionNotes, planDeviation: input.planDeviation, lessons: input.lessons, tomorrowFocus: input.tomorrowFocus, overallRating: input.overallRating };
-      await db.insert(dailyPlans).values(record).onDuplicateKeyUpdate({ set: record });
+      await db.insert(dailyPlans).values(record).onConflictDoUpdate({
+        target: [dailyPlans.userId, dailyPlans.accountId, dailyPlans.planDate],
+        set: record,
+      });
       return { success: true };
     }),
     remove: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), planId: z.number().int().positive(), confirmed: z.literal(true) })).mutation(async ({ ctx, input }) => {
