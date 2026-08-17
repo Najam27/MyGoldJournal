@@ -173,18 +173,24 @@
 - [x] Enforce server-side isolation for multiple trading accounts, MT5 connections, MT5 tickets, historical sync, live positions, and account switching without cross-account trade mixing.
 - [x] Fix the production MT5 Live connection leak where the selected `enx live` account displays the `Blueberry p2` connection, then verify each account sees only its own connection and records.
 - [x] Advance the PWA cache generation so authenticated users receive the repaired MT5 account-scoped bundle instead of a stale workspace asset.
-- [ ] Audit all interactive application controls, replace dummy behavior with complete handlers or remove unsupported controls, and verify light/dark responsive visibility across primary views.
+- [x] Audit all interactive application controls, replace dummy behavior with complete handlers or remove unsupported controls, and verify light/dark responsive visibility across primary views.
 - [x] Recover the managed MySQL-backed application locally, retain the validated MT5 isolation and UI repairs, and remove the unfinished external migration artifacts from the active release.
 - [x] Remove the client-visible AI Mentor local-storage key name while retaining the local-only privacy explanation and add a regression for the safe copy.
 - [x] Advance the PWA static cache generation and confirm the published AI Mentor privacy repair replaces the stale client bundle.
 - [x] Audit the authenticated Missed Trades view and dialog in dark theme, documenting contrast for its table, fields, buttons, and empty state without saving a record.
 - [x] Complete authenticated light-theme contrast checks for the remaining populated primary views: MT5 Live, Analysis, P&L Calendar, and Missed Trades.
-- [ ] Make populated P&L Calendar day-card buttons activate an explicit selected state on tap and keyboard, then add regression coverage.
+- [x] Make populated P&L Calendar day-card buttons activate an explicit selected state on tap and keyboard, then add regression coverage.
 - [x] Trace and document the complete MT5 ingress-to-journal data flow, including timestamp interpretation, ownership resolution, lifecycle transitions, and validation order.
 - [x] Centralize MT5 timestamp normalization to canonical UTC+5 using explicit payload offsets or a per-connection broker offset for offset-free broker-local timestamps.
 - [x] Add a user-configurable broker UTC offset to each MT5 connection and expose it only through account-scoped server procedures and MT5 setup controls.
 - [x] Make MT5 OPEN/CLOSE/history reconciliation idempotent, resistant to delayed OPEN events, and atomic across live-position and journal-trade updates.
 - [x] Harden MT5 ingest rate limiting, payload validation, safe error categorization, and bounded diagnostic logging without exposing API keys.
 - [x] Add regression coverage for broker offsets, UTC+5 date boundaries, duplicate and out-of-order events, close finalization, account isolation, and future-timestamp validation.
-- [ ] Complete a no-mutation production verification of the MT5 workspace and document remaining integration risks.
-- [ ] Advance the PWA cache generation so installed and returning users activate the MT5 integrity release.
+- [x] Complete a no-mutation production verification of the MT5 workspace and document remaining integration risks.
+- [x] Advance the PWA cache generation so installed and returning users activate the MT5 integrity release.
+- [ ] Trace the reported closed XAUUSDm position that remains OPEN in MT5 Live and Trade Log, then reconcile only the verified stale record safely.
+- [x] Enforce canonical fixed UTC+5 business timestamps for every MT5 event path, independent of broker-local display time or browser timezone.
+- [x] Allow edits to any already-journaled trade by correcting the false future-date guard without allowing genuinely new future-dated manual trades.
+- [x] Add regressions for stale-close reconciliation, fixed UTC+5 business dates, and editing existing journal records with historical dates.
+- [x] Update the MT5 Expert Advisor so live close detection runs while history backfill is still in progress and recent terminal closes are not starved behind historical batches.
+- [ ] Advance the PWA cache generation so returning users receive the EA v1.14 setup link and corrected journal-edit date guard.

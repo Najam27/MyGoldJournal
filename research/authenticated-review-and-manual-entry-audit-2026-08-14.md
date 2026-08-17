@@ -124,3 +124,11 @@ The selected account's authenticated **MT5 Live** view was reviewed in light the
 The populated **Analysis** view was also reviewed in light theme. Automation guidance, qualified-context cards, the session edge table, empty-context guidance, and the unmodified automation switch had clear status and text contrast. The populated **P&L Calendar** light-theme review confirmed readable monthly statistics, search/month picker, navigation controls, weekly cards, a negative daily P&L card, and its corresponding red weekly loss treatment.
 
 These production checks complete the remaining authenticated light-theme evidence for MT5 Live, Analysis, P&L Calendar, and Missed Trades. Together with the earlier light reviews and the documented dark checks, all primary views, shared forms, dialogs, cards, tables, navigation, and floating controls have recorded contrast coverage.
+
+## P&L Calendar activation verification — 2026-08-17
+
+In the published `1f1f2366` release, the authenticated August 2026 calendar rendered the active account's single populated **17 August** card with its negative P&L and matching Week 4 loss card. Activating the populated day by pointer produced a persistent selected outline/emphasis while preserving the page and journal data. The control remains keyboard-reachable and includes a descriptive day-level label. No month, trade, account, or calendar data was changed.
+
+## Four-breakpoint shell follow-up — 2026-08-17
+
+The current development shell was rechecked at **375 × 812**, **768 × 1024**, **1280 × 720**, and **1600 × 1000**. The phone layout retained its reachable menu, theme control, add action, and loading status without visible horizontal overflow. Tablet, laptop, and wide-desktop states retained aligned sync, theme, notification, and primary-add controls with readable loading hierarchy. The full interactive-control inventory also confirmed that the only formerly unbound primary button—the populated P&L Calendar day card—now has an explicit selected interaction, focused regression coverage, and the production verification above.

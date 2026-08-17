@@ -7,7 +7,19 @@ export function formatDate(value: Date | string | number | null | undefined) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Karachi", day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+}
+
+export function getPktDateInput(value: Date | string | number = new Date()) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const part = (type: string) => parts.find(item => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+export function isFuturePktDate(value: string, now: Date | string | number = new Date()) {
+  return !/^\d{4}-\d{2}-\d{2}$/.test(value) || value > getPktDateInput(now);
 }
 
 export function formatMoney(value: number | string | null | undefined) {
