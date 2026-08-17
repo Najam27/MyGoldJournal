@@ -215,12 +215,12 @@
 - [x] Implement only verified multi-account MT5, action-wiring, theme, and responsive repairs with a focused regression matrix, full validation, and a traceable production report.
 - [x] Trace and repair the authenticated tRPC path that is returning an HTML document where the client expects a JSON response, preserving routing and authentication behavior.
 - [x] Add focused regression coverage for API-route precedence and malformed non-JSON responses, then validate and publish the fix.
-- [ ] Audit existing session, OAuth, user, database, notification, and login UI capabilities for a secure compatible local-password design.
-- [ ] Add secure local email/password sign-up and login while preserving Google sign-in and safely linking an existing Google-account email to a password credential.
-- [ ] Add authenticated password setup and change flows in Options, with password strength validation, current-password verification where applicable, and no client-side secret persistence.
-- [ ] Add a rate-limited, time-limited, single-use password-recovery request and reset flow with non-enumerating responses and secure token storage.
-- [ ] Add migrations, security regressions, full validation, PWA activation, and user-facing recovery guidance for the local-authentication release.
-- [ ] Synchronize the complete current Gold Journal codebase to the connected GitHub repository and confirm the main branch receives the latest state.
+- [x] Audit existing session, OAuth, user, database, notification, and login UI capabilities for a secure compatible local-password design. Skipped further implementation at the user’s instruction.
+- [x] Add secure local email/password sign-up and login while preserving Google sign-in and safely linking an existing Google-account email to a password credential. Skipped at the user’s instruction; existing Google sign-in remains unchanged.
+- [x] Add authenticated password setup and change flows in Options, with password strength validation, current-password verification where applicable, and no client-side secret persistence. Skipped at the user’s instruction.
+- [x] Add a rate-limited, time-limited, single-use password-recovery request and reset flow with non-enumerating responses and secure token storage. Skipped at the user’s instruction.
+- [x] Add migrations, security regressions, full validation, PWA activation, and user-facing recovery guidance for the local-authentication release. Skipped at the user’s instruction.
+- [x] Synchronize the complete current Gold Journal codebase to the connected GitHub repository and confirm the main branch receives the latest state.
 - [x] Audit and harden production environment validation so required authentication, database, OAuth, and server configuration fails safely without exposing secret values.
 - [x] Audit MT5 API-key handling, bounded rate limiting, fixed UTC+5 timestamp preservation, idempotent event ordering, safe response mapping, and terminal-close reconciliation without breaking the existing EA contract.
 - [x] Audit and make account creation/deletion plus other multi-step account-scoped data operations atomic and ownership-checked, using additive schema protections only where evidence requires them.
