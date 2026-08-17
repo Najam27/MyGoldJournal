@@ -44,7 +44,7 @@
 - [x] Generate card-style PDF pages for every selected trade, including signed screenshot evidence where available.
 - [x] Add selected-period performance analysis and a P&L calendar summary to the bulk PDF report.
 - [x] Add tests for date-range selection and PDF report data preparation without leaking cross-account data.
-- [ ] Audit every primary application view at phone, tablet, laptop, and wide-desktop breakpoints for overflow, interaction reachability, and readable data density. The dashboard shell has passed phone and wide-desktop review.
+- [x] Audit every primary application view at phone, tablet, laptop, and wide-desktop breakpoints for overflow, interaction reachability, and readable data density. The finalized source-labeled view × breakpoint matrix preserves agent observations, shell checks, and trader sign-off separately.
 - [x] Add an intentional light theme with semantic surface, text, border, and status tokens that preserve contrast across cards, tables, dialogs, charts, and floating controls.
 - [x] Add a visible theme switch and ensure shared header controls, form elements, export dialog, and responsive navigation patterns follow the active theme.
 - [x] Add responsive/theme regression checks for the document theme class, local persistence, and semantic light/dark palette declarations.
@@ -64,7 +64,7 @@
 - [x] Diagnose and repair Goals calculation, period activity, status, and control behavior against account-scoped real trade data.
 - [x] Redesign Plan & Execution around a professional trader’s pre-market context, trade thesis, risk limits, execution review, and end-of-session scorecard.
 - [x] Execute and document the remaining protected no-mutation view-by-view review once the authenticated session is available.
-- [ ] Execute and document the remaining phone, tablet, laptop, and wide-desktop audit for all primary journal views once the authenticated session is available.
+- [x] Execute and document the remaining phone, tablet, laptop, and wide-desktop audit for all primary journal views once the authenticated session is available. The finalized source-labeled view × breakpoint matrix preserves agent observations, shell checks, and trader sign-off separately.
 - [x] Execute and document the remaining authenticated dark/light contrast audit across forms, cards, dialogs, tables, and navigation once the authenticated session is available.
 - [x] Retry the final checkpoint after the temporary artifact-host DNS outage clears so the validated project state can be preserved and published.
 - [x] Prevent unavailable screenshot-signing requests from delaying the protected journal loader and its authenticated review screens.
@@ -200,8 +200,11 @@
 - [x] Add explicit Previous month and Next month calendar navigation with visible labels and correct selected-month data.
 - [x] Add regression coverage for manual close reconciliation, account-scoped clear-all completeness, themed month selection, and month navigation.
 - [x] Persist an account-scoped MT5 data-reset watermark so a cleared journal is not immediately repopulated by pre-clear history or pre-clear open-position events.
-- [ ] Execute authenticated breakpoint audits at 375×812, 768×1024, 1280×720, and 1600×1000 for populated Trade Log, MT5 Live, Goals, P&L Calendar, and Plan & Execution views; record overflow, readability, and control-reachability findings.
-- [ ] Update the audit record with per-view, per-breakpoint evidence that distinguishes shell-only checks from populated authenticated-view checks, then close responsive audit items only after all views are verified.
+- [x] Execute authenticated breakpoint audits at 375×812, 768×1024, 1280×720, and 1600×1000 for populated Trade Log, MT5 Live, Goals, P&L Calendar, and Plan & Execution views; record overflow, readability, and control-reachability findings. The finalized matrix labels desktop agent observations and non-desktop trader-confirmed cells separately.
+- [x] Update the audit record with per-view, per-breakpoint evidence that distinguishes shell-only checks from populated authenticated-view checks, then close responsive audit items only after all views are verified. The matrix preserves that distinction and includes direct trader sign-off.
+- [x] Create a finalized responsive audit matrix listing Trade Log, MT5 Live, Goals, P&L Calendar, and Plan & Execution against 375, 768, 1280, and 1600 with explicit overflow, readability, and control-reachability findings for each cell.
+- [x] Record agent-verifiable populated-view evidence for missing non-desktop breakpoints, or explicitly document those cells as accepted only on direct trader confirmation rather than agent observation.
+- [x] Reconcile and checkpoint the detailed responsive audit matrix so shell-only and populated-authenticated evidence remain distinguishable before closing the audit tracker.
 - [x] Audit and harden production environment validation so required authentication, database, OAuth, and server configuration fails safely without exposing secret values.
 - [x] Audit MT5 API-key handling, bounded rate limiting, fixed UTC+5 timestamp preservation, idempotent event ordering, safe response mapping, and terminal-close reconciliation without breaking the existing EA contract.
 - [x] Audit and make account creation/deletion plus other multi-step account-scoped data operations atomic and ownership-checked, using additive schema protections only where evidence requires them.
