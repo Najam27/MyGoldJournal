@@ -1,6 +1,10 @@
 export type GoalComparison = "GTE" | "LTE";
 export type GoalStatus = "PENDING" | "AT RISK" | "MET" | "BREACHED";
 
+// The canonical, PKT-aware trader-control calculations are in
+// client/src/lib/traderGoals.ts. This compatibility helper intentionally stays
+// narrow for server notification code; do not add divergent formulas here.
+
 export function evaluateGoal(input: { value: number; target: number; comparison: GoalComparison; hasActivity: boolean }) {
   const { value, target, comparison, hasActivity } = input;
   const percentage = target > 0 ? Math.min(100, (value / target) * 100) : 0;

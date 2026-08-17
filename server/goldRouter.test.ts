@@ -85,16 +85,29 @@ describe("Gold Journal protected server workflows", () => {
   it("chooses a remaining owned account after confirmed removal", async () => {
     const deleteWhere = vi.fn().mockResolvedValue(undefined);
     const selectWhere = vi.fn().mockResolvedValue([{ id: 24, userId: 7 }, { id: 25, userId: 7 }]);
-    mocks.getOwnedAccount.mockResolvedValue({ id: 24, userId: 7, name: "Account to remove" });
-    mocks.getDb.mockResolvedValue({
+    const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({
       select: () => ({ from: () => ({ where: selectWhere }) }),
       delete: () => ({ where: deleteWhere }),
-    });
+    }));
+    mocks.getOwnedAccount.mockResolvedValue({ id: 24, userId: 7, name: "Account to remove" });
+    mocks.getDb.mockResolvedValue({ transaction });
     const caller = goldRouter.createCaller({ user } as any);
 
     await expect(caller.accounts.remove({ accountId: 24, confirmed: true })).resolves.toEqual({ success: true, replacementAccountId: 25 });
     expect(mocks.getOwnedAccount).toHaveBeenCalledWith(7, 24);
+    expect(transaction).toHaveBeenCalledTimes(1);
     expect(deleteWhere).toHaveBeenCalledTimes(9);
+  });
+
+  it("does not return the internal storage key after an owned screenshot upload", async () => {
+    const where = vi.fn().mockResolvedValue(undefined);
+    mocks.ownsTrade.mockResolvedValue({ id: 11, userId: 7 });
+    mocks.storagePut.mockResolvedValue({ key: "gold-journal/7/trades/internal-key.jpg", url: "https://signed.example.test/screenshot" });
+    mocks.getDb.mockResolvedValue({ update: () => ({ set: () => ({ where }) }) });
+    const caller = goldRouter.createCaller({ user } as any);
+
+    await expect(caller.trades.uploadScreenshot({ tradeId: 11, fileName: "setup.jpg", mimeType: "image/jpeg", base64: `data:image/jpeg;base64,${"A".repeat(100)}` })).resolves.toEqual({ url: "https://signed.example.test/screenshot" });
+    expect(where).toHaveBeenCalledTimes(1);
   });
 
   it("blocks an anonymous trade mutation before ownership validation", async () => {

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { selectBulkPdfTrades, summarizeBulkPdfTrades } from "./bulkPdf";
+import { describe, expect, it, vi } from "vitest";
+import { fetchAllTradePages, selectBulkPdfTrades, summarizeBulkPdfTrades } from "./bulkPdf";
 
 describe("bulk PDF report selection", () => {
   const trades = [
@@ -14,5 +14,15 @@ describe("bulk PDF report selection", () => {
 
   it("summarizes the selected period independently of excluded account rows", () => {
     expect(summarizeBulkPdfTrades(selectBulkPdfTrades(trades, 3))).toMatchObject({ total: 2, pnl: 10, wins: 1, losses: 1, winRate: 50 });
+  });
+
+  it("keeps safe browser rows selected by the server’s active-account scope and filters dates in PKT", () => {
+    expect(selectBulkPdfTrades([{ id: 4, tradeDate: new Date("2026-08-31T20:30:00Z"), pnl: "5", result: "WIN" }], 3, "2026-09-01", "2026-09-01")).toHaveLength(1);
+  });
+
+  it("loads every paginated page only when a report is explicitly requested", async () => {
+    const fetchPage = vi.fn(async (page: number) => ({ trades: [`trade-${page}`], pageCount: 3 }));
+    await expect(fetchAllTradePages(fetchPage)).resolves.toEqual(["trade-1", "trade-2", "trade-3"]);
+    expect(fetchPage).toHaveBeenCalledTimes(3);
   });
 });

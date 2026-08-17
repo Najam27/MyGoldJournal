@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock("@/lib/accountSelection", () => ({ getSelectedAccountId: () => 3, subscribeSelectedAccount: () => () => {} }));
-vi.mock("@/lib/trpc", () => ({ trpc: { journal: { get: { useQuery: () => ({ data: { activeAccount: { id: 3, name: "Funded Gold" }, trades: [{ id: 1, accountId: 3, tradeDate: new Date("2026-08-02T12:00:00Z"), pnl: "12", result: "WIN" }, { id: 2, accountId: 9, tradeDate: new Date("2026-08-03T12:00:00Z"), pnl: "99", result: "WIN" }] } }) } } } }));
+vi.mock("@/lib/trpc", () => ({ trpc: { useUtils: () => ({ trades: { list: { fetch: vi.fn() } } }), journal: { get: { useQuery: () => ({ data: { activeAccount: { id: 3, name: "Funded Gold" }, trades: [{ id: 1, accountId: 3, tradeDate: new Date("2026-08-02T12:00:00Z"), pnl: "12", result: "WIN" }, { id: 2, accountId: 9, tradeDate: new Date("2026-08-03T12:00:00Z"), pnl: "99", result: "WIN" }] } }) } } } }));
 vi.mock("@/components/ui/button", () => ({ Button: ({ children, ...props }: any) => <button {...props}>{children}</button> }));
 vi.mock("@/components/ui/input", () => ({ Input: (props: any) => <input {...props} /> }));
 vi.mock("@/components/ui/dialog", () => ({ Dialog: ({ children }: any) => <>{children}</>, DialogContent: ({ children }: any) => <div>{children}</div>, DialogDescription: ({ children }: any) => <p>{children}</p>, DialogHeader: ({ children }: any) => <div>{children}</div>, DialogTitle: ({ children }: any) => <h2>{children}</h2> }));
@@ -19,7 +19,7 @@ describe("BulkPdfExporter", () => {
     render(<BulkPdfExporter />);
     window.dispatchEvent(new Event("gold-journal:bulk-pdf"));
     await waitFor(() => expect(screen.getByText("Bulk trade-log PDF")).toBeTruthy());
-    expect(document.querySelector(".pdf-selection-summary")?.textContent).toContain("1 selected trade");
+    expect(document.querySelector(".pdf-selection-summary")?.textContent).toContain("1 recent preview trade");
     fireEvent.click(screen.getByRole("button", { name: /Custom date range/i }));
     expect(screen.getByLabelText("From")).toBeTruthy();
     expect(screen.getByLabelText("To")).toBeTruthy();

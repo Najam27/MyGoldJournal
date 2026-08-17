@@ -10,6 +10,7 @@ import { registerMt5Ingest } from "../mt5Ingest";
 import { getActiveMt5Connection, recordMt5HistoryFailure } from "../mt5Db";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { validateRuntimeConfiguration } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -31,23 +32,35 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  validateRuntimeConfiguration();
   const app = express();
   const server = createServer(app);
-  // Configure body parser with larger size limit for file uploads
+  app.disable("x-powered-by");
+  app.use((_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    if (process.env.NODE_ENV === "production") res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    next();
+  });
   app.use("/api/mt5", express.json({ limit: "256kb" }));
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Screenshot uploads use authenticated tRPC and are validated again by the
+  // procedure to a decoded 5 MB image. Other application JSON stays small.
+  app.use("/api/trpc", express.json({ limit: "10mb" }));
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMt5Ingest(app);
   app.use(async (error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.path === "/api/mt5" && (error as { type?: string })?.type === "entity.too.large") {
+    if ((error as { type?: string })?.type === "entity.too.large") {
       res.status(413).json({ ok: false, code: "PAYLOAD_TOO_LARGE" });
       return;
     }
     if (req.path === "/api/mt5" && error instanceof SyntaxError && "body" in error) {
-      const detail = error.message || "Malformed JSON request body.";
-      console.warn("[MT5] malformed JSON payload", detail);
+      const detail = "Malformed JSON request body.";
+      console.warn("[MT5] malformed JSON payload");
       const raw = typeof (error as { body?: unknown }).body === "string" ? (error as { body: string }).body : "";
       const apiKey = raw.match(/"api_key"\s*:\s*"([^"\\]{24,96})"/)?.[1];
       if (apiKey) {
@@ -90,4 +103,8 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+startServer().catch(error => {
+  console.error("[Server] Startup failed.");
+  if (process.env.NODE_ENV !== "production") console.error(error);
+  process.exitCode = 1;
+});

@@ -108,20 +108,22 @@ export const goldRouter = router({
     remove: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), confirmed: z.literal(true) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
-      const ownedAccounts = await db.select().from(accounts).where(eq(accounts.userId, ctx.user.id));
-      if (ownedAccounts.length < 2) throw new Error("Create another account before removing your only account.");
-      const replacement = ownedAccounts.find(account => account.id !== input.accountId);
-      if (!replacement) throw new Error("A replacement account could not be selected.");
-      await db.delete(notificationHistory).where(and(eq(notificationHistory.userId, ctx.user.id), eq(notificationHistory.accountId, input.accountId)));
-      await db.delete(dailyPlans).where(and(eq(dailyPlans.userId, ctx.user.id), eq(dailyPlans.accountId, input.accountId)));
-      await db.delete(skippedTrades).where(and(eq(skippedTrades.userId, ctx.user.id), eq(skippedTrades.accountId, input.accountId)));
-      await db.delete(cashMovements).where(and(eq(cashMovements.userId, ctx.user.id), eq(cashMovements.accountId, input.accountId)));
-      await db.delete(goals).where(and(eq(goals.userId, ctx.user.id), eq(goals.accountId, input.accountId)));
-      await db.delete(mt5LivePositions).where(eq(mt5LivePositions.accountId, input.accountId));
-      await db.delete(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId)));
-      await db.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
-      await db.delete(accounts).where(and(eq(accounts.userId, ctx.user.id), eq(accounts.id, input.accountId)));
-      return { success: true, replacementAccountId: replacement.id };
+      return db.transaction(async tx => {
+        const ownedAccounts = await tx.select().from(accounts).where(eq(accounts.userId, ctx.user.id));
+        if (ownedAccounts.length < 2) throw new Error("Create another account before removing your only account.");
+        const replacement = ownedAccounts.find(account => account.id !== input.accountId);
+        if (!replacement) throw new Error("A replacement account could not be selected.");
+        await tx.delete(notificationHistory).where(and(eq(notificationHistory.userId, ctx.user.id), eq(notificationHistory.accountId, input.accountId)));
+        await tx.delete(dailyPlans).where(and(eq(dailyPlans.userId, ctx.user.id), eq(dailyPlans.accountId, input.accountId)));
+        await tx.delete(skippedTrades).where(and(eq(skippedTrades.userId, ctx.user.id), eq(skippedTrades.accountId, input.accountId)));
+        await tx.delete(cashMovements).where(and(eq(cashMovements.userId, ctx.user.id), eq(cashMovements.accountId, input.accountId)));
+        await tx.delete(goals).where(and(eq(goals.userId, ctx.user.id), eq(goals.accountId, input.accountId)));
+        await tx.delete(mt5LivePositions).where(eq(mt5LivePositions.accountId, input.accountId));
+        await tx.delete(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId)));
+        await tx.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
+        await tx.delete(accounts).where(and(eq(accounts.userId, ctx.user.id), eq(accounts.id, input.accountId)));
+        return { success: true, replacementAccountId: replacement.id };
+      });
     }),
   }),
   mt5: router({
@@ -233,7 +235,7 @@ export const goldRouter = router({
       const stored = await storagePut(`gold-journal/${ctx.user.id}/trades/${trade.id}-${nanoid()}.${extension}`, bytes, input.mimeType);
       const db = await dbOrThrow();
       await db.update(trades).set({ screenshotKey: stored.key, screenshotName: input.fileName }).where(and(eq(trades.id, trade.id), eq(trades.userId, ctx.user.id)));
-      return { key: stored.key, url: stored.url };
+      return { url: stored.url };
     }),
   }),
   cash: router({

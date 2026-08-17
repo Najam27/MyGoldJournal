@@ -18,11 +18,12 @@ export const accounts = mysqlTable(
     id: int("id").autoincrement().primaryKey(),
     userId: int("userId").notNull(),
     name: varchar("name", { length: 100 }).notNull(),
+    bootstrapKey: varchar("bootstrapKey", { length: 32 }),
     startingBalance: decimal("startingBalance", { precision: 14, scale: 2 }).default("0.00").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
-  table => [index("gj_accounts_user_idx").on(table.userId)],
+  table => [index("gj_accounts_user_idx").on(table.userId), uniqueIndex("gj_accounts_user_bootstrap_unique").on(table.userId, table.bootstrapKey)],
 );
 
 export const trades = mysqlTable(

@@ -202,5 +202,12 @@
 - [x] Persist an account-scoped MT5 data-reset watermark so a cleared journal is not immediately repopulated by pre-clear history or pre-clear open-position events.
 - [ ] Execute authenticated breakpoint audits at 375×812, 768×1024, 1280×720, and 1600×1000 for populated Trade Log, MT5 Live, Goals, P&L Calendar, and Plan & Execution views; record overflow, readability, and control-reachability findings.
 - [ ] Update the audit record with per-view, per-breakpoint evidence that distinguishes shell-only checks from populated authenticated-view checks, then close responsive audit items only after all views are verified.
+- [x] Audit and harden production environment validation so required authentication, database, OAuth, and server configuration fails safely without exposing secret values.
+- [x] Audit MT5 API-key handling, bounded rate limiting, fixed UTC+5 timestamp preservation, idempotent event ordering, safe response mapping, and terminal-close reconciliation without breaking the existing EA contract.
+- [x] Audit and make account creation/deletion plus other multi-step account-scoped data operations atomic and ownership-checked, using additive schema protections only where evidence requires them.
+- [x] Reduce oversized global request parsing, add safe error/headers controls, and audit client-visible responses for secret or internal-data disclosure.
+- [x] Audit journal loading/search pagination, date/month business calculations, indexes, and large-history behavior while preserving existing filters, exports, and the fixed UTC+5 convention.
+- [x] Audit and remove only justified GoldJournal type-suppression issues, then consolidate duplicated goal formulas where practical without changing goal behavior.
+- [x] Add focused regression coverage for each verified hardening correction and complete full test, type, build, migration, and production validation.
 - [x] Raise the Manage accounts control above the lower-right branding overlay while retaining a separate reachable Rules & lists control at desktop and mobile breakpoints.
 - [x] Advance the PWA cache generation so returning users activate the floating-control positioning repair.
