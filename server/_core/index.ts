@@ -9,7 +9,6 @@ import { appRouter } from "../routers";
 import { registerMt5Ingest } from "../mt5Ingest";
 import { getActiveMt5Connection, recordMt5HistoryFailure } from "../mt5Db";
 import { createContext } from "./context";
-import { assertProductionConfiguration, ENV } from "./env";
 import { serveStatic, setupVite } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -31,22 +30,12 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-export async function createApp(options: { serveFrontend?: boolean } = {}) {
-  const { serveFrontend = true } = options;
-  assertProductionConfiguration();
+async function startServer() {
   const app = express();
-  app.disable("x-powered-by");
-  app.use((req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    if (ENV.isProduction) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-    next();
-  });
-  // Keep JSON requests bounded; MT5 history batches are separately limited to 50 positions.
-  app.use(express.json({ limit: "2mb", strict: true }));
-  app.use(express.urlencoded({ limit: "256kb", extended: true, parameterLimit: 100 }));
+  const server = createServer(app);
+  // Configure body parser with larger size limit for file uploads
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMt5Ingest(app);
@@ -69,6 +58,7 @@ export async function createApp(options: { serveFrontend?: boolean } = {}) {
     }
     next(error);
   });
+  // tRPC API
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -76,25 +66,13 @@ export async function createApp(options: { serveFrontend?: boolean } = {}) {
       createContext,
     })
   );
-  if (serveFrontend) {
-    if (process.env.NODE_ENV === "development") {
-      const server = createServer(app);
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
-  }
-  return app;
-}
-
-export async function startServer() {
-  const app = await createApp({ serveFrontend: false });
-  const server = createServer(app);
+  // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
+
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
 
@@ -107,6 +85,4 @@ export async function startServer() {
   });
 }
 
-if (process.env.NETLIFY !== "true") {
-  startServer().catch(console.error);
-}
+startServer().catch(console.error);

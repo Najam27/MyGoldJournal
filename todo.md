@@ -172,3 +172,4 @@
 - [ ] Align and publish the connected Najam27/MyGoldJournal repository with the validated Gold Journal UI, workflows, security, PWA, responsive behavior, Supabase data layer, and Netlify deployment configuration.
 - [x] Enforce server-side isolation for multiple trading accounts, MT5 connections, MT5 tickets, historical sync, live positions, and account switching without cross-account trade mixing.
 - [ ] Audit all interactive application controls, replace dummy behavior with complete handlers or remove unsupported controls, and verify light/dark responsive visibility across primary views.
+- [x] Recover the managed MySQL-backed application locally, retain the validated MT5 isolation and UI repairs, and remove the unfinished external migration artifacts from the active release.

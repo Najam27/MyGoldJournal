@@ -11,8 +11,8 @@ vi.mock("@/lib/trpc", () => ({
         useQuery: () => ({
           data: {
             connections: [{ id: 1, accountId: 12, accountName: "GFT 10K", label: "GFT Live", apiKey: "mt5_secret_connection_key_abcdefghijk", active: true, lastPing: new Date(), mt5Login: "90123456", brokerServer: "Broker-Live", currency: "USD", balance: "10000.00", equity: "10042.50", margin: "250.00", freeMargin: "9792.50", floatingPnl: "42.50", lastHistorySync: new Date(), historySyncedCount: 6 }],
-            openPositions: [{ accountId: 12, ticket: "123456789", symbol: "XAUUSD", direction: "BUY", lots: "0.01", openPrice: "3285.50", slPrice: "3275.00", tpPrice: "3310.00", riskUsd: "45.00", rewardUsd: "200.00", rrRatio: "4.44", floatingPnl: "12.50", openTime: new Date(), status: "OPEN" }],
-            closedPositions: [{ accountId: 12, ticket: "987654321", symbol: "XAUUSD", direction: "SELL", lots: "0.01", openPrice: "3300.00", closePrice: "3280.00", riskUsd: "50.00", rewardUsd: "100.00", rrRatio: "2.00", realizedPnl: "40.00", result: "WIN", closeTime: new Date(), journaled: false }],
+            openPositions: [{ ticket: "123456789", symbol: "XAUUSD", direction: "BUY", lots: "0.01", openPrice: "3285.50", slPrice: "3275.00", tpPrice: "3310.00", riskUsd: "45.00", rewardUsd: "200.00", rrRatio: "4.44", floatingPnl: "12.50", openTime: new Date(), status: "OPEN" }],
+            closedPositions: [{ ticket: "987654321", symbol: "XAUUSD", direction: "SELL", lots: "0.01", openPrice: "3300.00", closePrice: "3280.00", riskUsd: "50.00", rewardUsd: "100.00", rrRatio: "2.00", realizedPnl: "40.00", result: "WIN", closeTime: new Date(), journaled: false }],
           },
           isFetching: false,
           refetch: mocks.refetch,
@@ -20,7 +20,7 @@ vi.mock("@/lib/trpc", () => ({
       },
       history: {
         useQuery: () => ({
-          data: { positions: [{ accountId: 12, ticket: "987654321", symbol: "XAUUSD", direction: "SELL", lots: "0.01", openPrice: "3300.00", closePrice: "3280.00", riskUsd: "50.00", rewardUsd: "100.00", rrRatio: "2.00", realizedPnl: "40.00", result: "WIN", closeTime: new Date(), journaled: false }], total: 42, page: 1, pageSize: 20, pageCount: 3 },
+          data: { positions: [{ ticket: "987654321", symbol: "XAUUSD", direction: "SELL", lots: "0.01", openPrice: "3300.00", closePrice: "3280.00", riskUsd: "50.00", rewardUsd: "100.00", rrRatio: "2.00", realizedPnl: "40.00", result: "WIN", closeTime: new Date(), journaled: false }], total: 42, page: 1, pageSize: 20, pageCount: 3 },
           isFetching: false, isLoading: false, refetch: mocks.refetch,
         }),
       },

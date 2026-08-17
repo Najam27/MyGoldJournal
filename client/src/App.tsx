@@ -1,5 +1,4 @@
 import { Toaster } from "@/components/ui/sonner";
-import { lazy, Suspense } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
@@ -8,10 +7,9 @@ import { PwaUpdateBanner } from "./components/PwaUpdateBanner";
 import { AccountRenameControl } from "./components/AccountRenameControl";
 import { NotificationCenter } from "./components/NotificationCenter";
 import { OptionListManager } from "./components/OptionListManager";
+import { BulkPdfExporter } from "./components/BulkPdfExporter";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-
-const BulkPdfExporter = lazy(() => import("./components/BulkPdfExporter").then(module => ({ default: module.BulkPdfExporter })));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -43,9 +41,7 @@ function App() {
           <AccountRenameControl />
           <NotificationCenter />
           <OptionListManager />
-          <Suspense fallback={null}>
-            <BulkPdfExporter />
-          </Suspense>
+          <BulkPdfExporter />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
