@@ -175,4 +175,5 @@
 - [x] Advance the PWA cache generation so authenticated users receive the repaired MT5 account-scoped bundle instead of a stale workspace asset.
 - [ ] Audit all interactive application controls, replace dummy behavior with complete handlers or remove unsupported controls, and verify light/dark responsive visibility across primary views.
 - [x] Recover the managed MySQL-backed application locally, retain the validated MT5 isolation and UI repairs, and remove the unfinished external migration artifacts from the active release.
-- [x] Remove the client-visible AI Mentor local-storage key name while retaining the local-only privacy explanation and add a regression for the safe copy.
+- [ ] Remove the client-visible AI Mentor local-storage key name while retaining the local-only privacy explanation and add a regression for the safe copy. Source and regression are complete; production cache activation remains required.
+- [ ] Advance the PWA static cache generation and confirm the published AI Mentor privacy repair replaces the stale client bundle.

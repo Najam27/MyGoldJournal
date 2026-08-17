@@ -1,4 +1,4 @@
-const CACHE_NAME = "gold-journal-static-v3";
+const CACHE_NAME = "gold-journal-static-v4";
 const PRECACHE = ["/manifest.json", "/manus-storage/gold-journal-au-mark_de0e8ecf.png"];
 
 self.addEventListener("install", event => {
