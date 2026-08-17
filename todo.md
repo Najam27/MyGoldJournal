@@ -188,15 +188,19 @@
 - [x] Add regression coverage for broker offsets, UTC+5 date boundaries, duplicate and out-of-order events, close finalization, account isolation, and future-timestamp validation.
 - [x] Complete a no-mutation production verification of the MT5 workspace and document remaining integration risks.
 - [x] Advance the PWA cache generation so installed and returning users activate the MT5 integrity release.
-- [ ] Trace the reported closed XAUUSDm position that remains OPEN in MT5 Live and Trade Log, then reconcile only the verified stale record safely.
+- [x] Trace the reported closed XAUUSDm position that remains OPEN in MT5 Live and Trade Log, then reconcile only the verified stale record safely.
 - [x] Enforce canonical fixed UTC+5 business timestamps for every MT5 event path, independent of broker-local display time or browser timezone.
 - [x] Allow edits to any already-journaled trade by correcting the false future-date guard without allowing genuinely new future-dated manual trades.
 - [x] Add regressions for stale-close reconciliation, fixed UTC+5 business dates, and editing existing journal records with historical dates.
 - [x] Update the MT5 Expert Advisor so live close detection runs while history backfill is still in progress and recent terminal closes are not starved behind historical batches.
-- [ ] Advance the PWA cache generation so returning users receive the EA v1.14 setup link and corrected journal-edit date guard.
+- [x] Advance the PWA cache generation so returning users receive the EA v1.14 setup link and corrected journal-edit date guard.
 - [x] Ensure manually closed MT5 positions finalize through live close detection and history reconciliation even when no SL or TP is hit.
 - [x] Make Clear all remove all active-account journal records and linked MT5 position/history records in one explicit, confirmed, account-scoped operation.
 - [x] Replace the P&L monthly overview's dark-incompatible native month selector with an accessible themed control.
 - [x] Add explicit Previous month and Next month calendar navigation with visible labels and correct selected-month data.
 - [x] Add regression coverage for manual close reconciliation, account-scoped clear-all completeness, themed month selection, and month navigation.
 - [x] Persist an account-scoped MT5 data-reset watermark so a cleared journal is not immediately repopulated by pre-clear history or pre-clear open-position events.
+- [ ] Execute authenticated breakpoint audits at 375×812, 768×1024, 1280×720, and 1600×1000 for populated Trade Log, MT5 Live, Goals, P&L Calendar, and Plan & Execution views; record overflow, readability, and control-reachability findings.
+- [ ] Update the audit record with per-view, per-breakpoint evidence that distinguishes shell-only checks from populated authenticated-view checks, then close responsive audit items only after all views are verified.
+- [x] Raise the Manage accounts control above the lower-right branding overlay while retaining a separate reachable Rules & lists control at desktop and mobile breakpoints.
+- [x] Advance the PWA cache generation so returning users activate the floating-control positioning repair.
