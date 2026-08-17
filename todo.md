@@ -213,6 +213,8 @@
 - [x] Audit every visible interactive control for real handler wiring, loading/disabled/error behavior, and truthful user feedback; identify only verified non-functional controls for repair or removal.
 - [x] Audit hardcoded frontend presentation behavior, light/dark token use, and responsive constraints across pages, dialogs, tables, forms, widgets, charts, navigation, and floating controls without changing data logic.
 - [x] Implement only verified multi-account MT5, action-wiring, theme, and responsive repairs with a focused regression matrix, full validation, and a traceable production report.
+- [x] Trace and repair the authenticated tRPC path that is returning an HTML document where the client expects a JSON response, preserving routing and authentication behavior.
+- [x] Add focused regression coverage for API-route precedence and malformed non-JSON responses, then validate and publish the fix.
 - [x] Audit and harden production environment validation so required authentication, database, OAuth, and server configuration fails safely without exposing secret values.
 - [x] Audit MT5 API-key handling, bounded rate limiting, fixed UTC+5 timestamp preservation, idempotent event ordering, safe response mapping, and terminal-close reconciliation without breaking the existing EA contract.
 - [x] Audit and make account creation/deletion plus other multi-step account-scoped data operations atomic and ownership-checked, using additive schema protections only where evidence requires them.
