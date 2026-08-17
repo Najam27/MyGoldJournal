@@ -25,4 +25,9 @@ describe("NotificationCenter", () => {
     fireEvent.click(goalAlert);
     await waitFor(() => expect(mocks.updateSettings).toHaveBeenCalledWith({ goalAlerts: false, emailAlerts: false }));
   });
+
+  it("uses the supplied functional header-trigger class", () => {
+    render(<NotificationCenter triggerClassName="icon-button" />);
+    expect(screen.getByTitle("Notifications").classList.contains("icon-button")).toBe(true);
+  });
 });

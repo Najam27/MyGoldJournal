@@ -68,3 +68,13 @@ The dark loading shell also remained readable and aligned at **1280 × 720** and
 ## Tracked follow-up
 
 The skipped-trade form has been replaced with a standalone, independently tested component. It preserves the account-scoped list and review table while requiring trader-entered direction, reason, confidence, and outcome before a skipped opportunity can be saved. The protected mobile/tablet and multi-account review remain tracked because the authenticated audit session has only one account and one available browser viewport.
+
+After the new production asset activated, the authenticated dialog was rechecked without saving. It displayed **Select direction**, **Select confidence**, a blank skip-reason field, a blank outcome field, optional estimated-missed input, and blank notes. The dialog was closed with Cancel and no skipped-trade record was created.
+
+## Multi-account MT5 isolation repair — 2026-08-17
+
+The MT5 workspace had a server-side connection-list defect: it selected every connection owned by the user instead of only connections belonging to the selected owned journal account. The workspace now scopes connections by both `userId` and `accountId`; live and historical positions were already account-filtered and remain so. Connection mutation endpoints now require the selected account ID and verify that the target connection belongs to that exact account before updating or deleting it. The client removes retained prior-account trade-list data during an account switch, and the MT5 sidebar/header now consumes the already scoped connection response rather than matching connection IDs across accounts.
+
+MT5 ingest continues to derive `userId` and `accountId` only from the authenticated API-key connection. New tests cover a payload attempting to supply another account ID and two account connections carrying the same MT5 ticket. The fallback parser now treats offset-free MT5 broker timestamps as UTC+3 before PKT classification. Connection keys are returned once at creation for EA setup and are absent from subsequent workspace responses.
+
+The desktop header notification bell now opens the existing functional notification center. The shared floating surfaces, notification surfaces, account-manager rows, PDF controls, and trade dialog use semantic theme tokens instead of graphite-only values. A current phone-size shell review at 375×812 found loading text, navigation, theme toggle, and add control readable and reachable in both light and dark themes; protected populated-view responsive review remains an explicit follow-up.

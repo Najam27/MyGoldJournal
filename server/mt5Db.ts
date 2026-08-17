@@ -11,8 +11,6 @@ async function requireDb() {
 
 function safePosition(position: typeof mt5LivePositions.$inferSelect, journaledTickets: Set<string>) {
   return {
-    id: position.id,
-    accountId: position.accountId,
     ticket: position.ticket.toString(),
     symbol: position.symbol,
     direction: position.direction,
@@ -53,19 +51,17 @@ export function pktSession(date: Date) {
 }
 
 export async function getMt5Workspace(userId: number, accountId: number) {
-  await getOwnedAccount(userId, accountId);
+  const account = await getOwnedAccount(userId, accountId);
   const db = await requireDb();
-  const [connections, accountRows, openPositions, closedPositions, journalRows] = await Promise.all([
-    db.select().from(mt5Connections).where(eq(mt5Connections.userId, userId)).orderBy(desc(mt5Connections.createdAt)),
-    db.select({ id: accounts.id, name: accounts.name }).from(accounts).where(eq(accounts.userId, userId)),
+  const [connections, openPositions, closedPositions, journalRows] = await Promise.all([
+    db.select().from(mt5Connections).where(and(eq(mt5Connections.userId, userId), eq(mt5Connections.accountId, accountId))).orderBy(desc(mt5Connections.createdAt)),
     db.select().from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.status, "OPEN"))).orderBy(desc(mt5LivePositions.updatedAt)),
     db.select().from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.status, "CLOSED"))).orderBy(desc(mt5LivePositions.closeTime)).limit(10),
     db.select({ mt5Ticket: trades.mt5Ticket }).from(trades).where(and(eq(trades.userId, userId), eq(trades.accountId, accountId))),
   ]);
-  const accountNames = new Map(accountRows.map(account => [account.id, account.name]));
   const journaledTickets = new Set(journalRows.flatMap(row => row.mt5Ticket == null ? [] : [row.mt5Ticket.toString()]));
   return {
-    connections: connections.map(connection => ({ id: connection.id, accountId: connection.accountId, accountName: accountNames.get(connection.accountId) ?? "Trading account", label: connection.label, apiKey: connection.apiKey, active: connection.active, lastPing: connection.lastPing, mt5Login: connection.mt5Login?.toString() ?? null, brokerServer: connection.brokerServer, currency: connection.currency, balance: connection.balance, equity: connection.equity, margin: connection.margin, freeMargin: connection.freeMargin, floatingPnl: connection.floatingPnl, lastHistorySync: connection.lastHistorySync, historySyncedCount: connection.historySyncedCount, lastHistoryAttempt: connection.lastHistoryAttempt, lastHistoryStatus: connection.lastHistoryStatus, lastHistoryMessage: connection.lastHistoryMessage, lastHistoryBatchSize: connection.lastHistoryBatchSize, createdAt: connection.createdAt })),
+    connections: connections.map(connection => ({ id: connection.id, accountName: account.name, label: connection.label, active: connection.active, lastPing: connection.lastPing, mt5Login: connection.mt5Login?.toString() ?? null, brokerServer: connection.brokerServer, currency: connection.currency, balance: connection.balance, equity: connection.equity, margin: connection.margin, freeMargin: connection.freeMargin, floatingPnl: connection.floatingPnl, lastHistorySync: connection.lastHistorySync, historySyncedCount: connection.historySyncedCount, lastHistoryAttempt: connection.lastHistoryAttempt, lastHistoryStatus: connection.lastHistoryStatus, lastHistoryMessage: connection.lastHistoryMessage, lastHistoryBatchSize: connection.lastHistoryBatchSize, createdAt: connection.createdAt })),
     openPositions: openPositions.map(position => safePosition(position, journaledTickets)),
     closedPositions: closedPositions.map(position => safePosition(position, journaledTickets)),
   };

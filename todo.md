@@ -168,3 +168,7 @@
 - [x] Remove hard-coded Skip reason and Outcome defaults from the manual Missed Trades form so each opportunity is recorded from trader-entered facts.
 - [x] Remove the remaining hard-coded New Trade direction, result, timeframe, quality, execution, and patience defaults so manual entries start only with an auto-detected PKT session.
 - [x] Add explicit blank Direction and Result choices in the live reusable New Trade dialog so browser-native first-option selection cannot bypass the required-choice guard.
+- [x] Deliver one comprehensive Gold Journal rebuild prompt covering Supabase, Netlify, every feature, security requirement, and complete responsive UI behavior.
+- [ ] Align and publish the connected Najam27/MyGoldJournal repository with the validated Gold Journal UI, workflows, security, PWA, responsive behavior, Supabase data layer, and Netlify deployment configuration.
+- [x] Enforce server-side isolation for multiple trading accounts, MT5 connections, MT5 tickets, historical sync, live positions, and account switching without cross-account trade mixing.
+- [ ] Audit all interactive application controls, replace dummy behavior with complete handlers or remove unsupported controls, and verify light/dark responsive visibility across primary views.

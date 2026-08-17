@@ -6,7 +6,7 @@ const numeric = z.coerce.number().finite();
 const ticket = z.union([z.string().regex(/^\d+$/), z.number().int().nonnegative()]).transform(value => BigInt(value));
 const timestamp = z.string().trim().min(8).max(40).transform(value => {
   const mqlDate = value.replace(/^(\d{4})\.(\d{2})\.(\d{2})/, "$1-$2-$3");
-  const normalized = /[zZ]|[+-]\d\d:?\d\d$/.test(mqlDate) ? mqlDate : `${mqlDate.replace(" ", "T")}+05:00`;
+  const normalized = /[zZ]|[+-]\d\d:?\d\d$/.test(mqlDate) ? mqlDate : `${mqlDate.replace(" ", "T")}+03:00`;
   const parsed = new Date(normalized);
   if (Number.isNaN(parsed.getTime())) throw new Error("Invalid MT5 timestamp");
   return parsed;

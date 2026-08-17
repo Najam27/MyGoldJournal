@@ -29,9 +29,9 @@ describe("MT5 EA ingest", () => {
     expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n, direction: "BUY", floatingPnl: 12.5, symbol: "XAUUSD" }));
   });
 
-  it("accepts the dot-formatted timestamps emitted by MQL5 for live and historical positions", async () => {
+  it("treats timezone-less MQL5 broker timestamps as UTC+3 for live and historical positions", async () => {
     await expect(processMt5Payload(openPayload(key("mql-date")))).resolves.toEqual({ status: 200, body: { ok: true, event: "open" } });
-    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ openTime: new Date("2026-07-11T04:30:00Z") }));
+    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ openTime: new Date("2026-07-11T06:30:00Z") }));
   });
 
   it("preserves an explicit UTC+3 broker timestamp so journal sync can classify the corresponding PKT session", async () => {
@@ -65,6 +65,20 @@ describe("MT5 EA ingest", () => {
     expect(mocks.historyAttempt).toHaveBeenCalledWith(44, 1);
     expect(mocks.historyAccepted).toHaveBeenCalledWith(44, 1, true);
     expect(mocks.completeHistory).toHaveBeenCalledWith(44, 12);
+  });
+
+  it("derives the target account from the authenticated connection even when a payload attempts to supply another account", async () => {
+    await expect(processMt5Payload({ ...openPayload(key("spoofed-account")), accountId: 999 })).resolves.toMatchObject({ status: 200 });
+    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n }));
+    expect(mocks.open).not.toHaveBeenCalledWith(77, 999, expect.anything());
+  });
+
+  it("keeps identical tickets independent when separate API keys resolve to separate accounts", async () => {
+    mocks.getActive.mockImplementation(async (apiKey: string) => apiKey === key("account-b") ? { id: 45, userId: 77, accountId: 13, active: true } : { id: 44, userId: 77, accountId: 12, active: true });
+    await processMt5Payload(openPayload(key("account-a")));
+    await processMt5Payload(openPayload(key("account-b")));
+    expect(mocks.open).toHaveBeenCalledWith(77, 12, expect.objectContaining({ ticket: 123456789n }));
+    expect(mocks.open).toHaveBeenCalledWith(77, 13, expect.objectContaining({ ticket: 123456789n }));
   });
 
   it("limits a single API key to five events per second", async () => {

@@ -60,9 +60,10 @@ async function ownGoal(userId: number, goalId: number) {
   return found[0];
 }
 
-async function ownMt5Connection(userId: number, connectionId: number) {
+async function ownMt5Connection(userId: number, accountId: number, connectionId: number) {
+  await getOwnedAccount(userId, accountId);
   const db = await dbOrThrow();
-  const found = await db.select().from(mt5Connections).where(and(eq(mt5Connections.id, connectionId), eq(mt5Connections.userId, userId))).limit(1);
+  const found = await db.select().from(mt5Connections).where(and(eq(mt5Connections.id, connectionId), eq(mt5Connections.userId, userId), eq(mt5Connections.accountId, accountId))).limit(1);
   if (!found[0]) throw new Error("That MT5 connection is unavailable.");
   return found[0];
 }
@@ -120,20 +121,20 @@ export const goldRouter = router({
     createConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), label: z.string().trim().min(1).max(120) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
-      const existing = await db.select({ id: mt5Connections.id }).from(mt5Connections).where(eq(mt5Connections.accountId, input.accountId)).limit(1);
+      const existing = await db.select({ id: mt5Connections.id }).from(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId))).limit(1);
       if (existing[0]) throw new Error("This Gold Journal account already has an MT5 connection. Edit or replace it from MT5 Live.");
       const apiKey = randomBytes(32).toString("base64url");
       const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey, active: true });
-      return { id: Number(inserted[0].insertId) };
+      return { id: Number(inserted[0].insertId), apiKey };
     }),
-    setConnectionActive: protectedProcedure.input(z.object({ connectionId: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
-      const connection = await ownMt5Connection(ctx.user.id, input.connectionId);
+    setConnectionActive: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), connectionId: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
+      const connection = await ownMt5Connection(ctx.user.id, input.accountId, input.connectionId);
       const db = await dbOrThrow();
       await db.update(mt5Connections).set({ active: input.active }).where(and(eq(mt5Connections.id, connection.id), eq(mt5Connections.userId, ctx.user.id)));
       return { success: true };
     }),
-    deleteConnection: protectedProcedure.input(z.object({ connectionId: z.number().int().positive(), confirmed: z.literal(true) })).mutation(async ({ ctx, input }) => {
-      const connection = await ownMt5Connection(ctx.user.id, input.connectionId);
+    deleteConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), connectionId: z.number().int().positive(), confirmed: z.literal(true) })).mutation(async ({ ctx, input }) => {
+      const connection = await ownMt5Connection(ctx.user.id, input.accountId, input.connectionId);
       const db = await dbOrThrow();
       await db.delete(mt5Connections).where(and(eq(mt5Connections.id, connection.id), eq(mt5Connections.userId, ctx.user.id)));
       return { success: true };
