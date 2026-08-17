@@ -25,7 +25,7 @@
 - [x] Wire the rename workflow and tests to the currently selected account after switching.
 - [x] Add client-level selected-account state coverage proving a switch updates the rename target.
 - [x] Verify responsive desktop/mobile UI, database migrations, PWA assets, test suite, type checks, and production build. Authenticated end-to-end browser automation remains blocked by the external OAuth human-verification step.
-- [ ] Complete a no-mutation end-to-end review of every authenticated Gold Journal view, key dialog, account-switching flow, and PWA state.
+- [x] Complete a no-mutation end-to-end review of every authenticated Gold Journal view, key dialog, account-switching flow, and PWA state.
 - [x] Add a clear multi-account manager for creating, switching, renaming, and confirmed removal of trading accounts.
 - [x] Add a safe protected account-removal procedure that prevents accidental deletion and chooses a replacement active account.
 - [x] Expand the MT5 view with an account-import workflow, connection prerequisites, configurable bridge settings, and import-result guidance.
@@ -49,7 +49,7 @@
 - [x] Add a visible theme switch and ensure shared header controls, form elements, export dialog, and responsive navigation patterns follow the active theme.
 - [x] Add responsive/theme regression checks for the document theme class, local persistence, and semantic light/dark palette declarations.
 - [x] Fix account selector and native option-menu contrast so account names and choices remain readable in dark mode.
-- [ ] Finish an authenticated dark-mode audit across shared cards, tables, dialogs, and form fields, then document the reviewed breakpoints and any further fixes.
+- [x] Finish an authenticated dark-mode audit across shared cards, tables, dialogs, and form fields, then document the reviewed breakpoints and any further fixes.
 - [x] Expand the accessible per-trade card-view action to cover every persisted trade field, including record metadata, alongside signed screenshot evidence.
 - [x] Add persistent custom-value controls for every configurable New Trade journal option, making added values available in future entries.
 - [x] Add a complete in-app MT5 bridge setup process covering local bridge installation, terminal preparation, account mapping, connection testing, and import execution.
@@ -63,9 +63,9 @@
 - [x] Complete the Trade Log visible context with direction-versus-bias and the remaining saved execution fields, preserving readable responsive columns and the full trade card.
 - [x] Diagnose and repair Goals calculation, period activity, status, and control behavior against account-scoped real trade data.
 - [x] Redesign Plan & Execution around a professional trader’s pre-market context, trade thesis, risk limits, execution review, and end-of-session scorecard.
-- [ ] Execute and document the remaining protected no-mutation view-by-view review once the authenticated session is available.
+- [x] Execute and document the remaining protected no-mutation view-by-view review once the authenticated session is available.
 - [ ] Execute and document the remaining phone, tablet, laptop, and wide-desktop audit for all primary journal views once the authenticated session is available.
-- [ ] Execute and document the remaining authenticated dark/light contrast audit across forms, cards, dialogs, tables, and navigation once the authenticated session is available.
+- [x] Execute and document the remaining authenticated dark/light contrast audit across forms, cards, dialogs, tables, and navigation once the authenticated session is available.
 - [x] Retry the final checkpoint after the temporary artifact-host DNS outage clears so the validated project state can be preserved and published.
 - [x] Prevent unavailable screenshot-signing requests from delaying the protected journal loader and its authenticated review screens.
 - [x] Replace the protected journal’s indefinite loading state with an explicit session-recovery state when account data cannot load.
@@ -175,5 +175,16 @@
 - [x] Advance the PWA cache generation so authenticated users receive the repaired MT5 account-scoped bundle instead of a stale workspace asset.
 - [ ] Audit all interactive application controls, replace dummy behavior with complete handlers or remove unsupported controls, and verify light/dark responsive visibility across primary views.
 - [x] Recover the managed MySQL-backed application locally, retain the validated MT5 isolation and UI repairs, and remove the unfinished external migration artifacts from the active release.
-- [ ] Remove the client-visible AI Mentor local-storage key name while retaining the local-only privacy explanation and add a regression for the safe copy. Source and regression are complete; production cache activation remains required.
-- [ ] Advance the PWA static cache generation and confirm the published AI Mentor privacy repair replaces the stale client bundle.
+- [x] Remove the client-visible AI Mentor local-storage key name while retaining the local-only privacy explanation and add a regression for the safe copy.
+- [x] Advance the PWA static cache generation and confirm the published AI Mentor privacy repair replaces the stale client bundle.
+- [x] Audit the authenticated Missed Trades view and dialog in dark theme, documenting contrast for its table, fields, buttons, and empty state without saving a record.
+- [x] Complete authenticated light-theme contrast checks for the remaining populated primary views: MT5 Live, Analysis, P&L Calendar, and Missed Trades.
+- [ ] Make populated P&L Calendar day-card buttons activate an explicit selected state on tap and keyboard, then add regression coverage.
+- [x] Trace and document the complete MT5 ingress-to-journal data flow, including timestamp interpretation, ownership resolution, lifecycle transitions, and validation order.
+- [x] Centralize MT5 timestamp normalization to canonical UTC+5 using explicit payload offsets or a per-connection broker offset for offset-free broker-local timestamps.
+- [x] Add a user-configurable broker UTC offset to each MT5 connection and expose it only through account-scoped server procedures and MT5 setup controls.
+- [x] Make MT5 OPEN/CLOSE/history reconciliation idempotent, resistant to delayed OPEN events, and atomic across live-position and journal-trade updates.
+- [x] Harden MT5 ingest rate limiting, payload validation, safe error categorization, and bounded diagnostic logging without exposing API keys.
+- [x] Add regression coverage for broker offsets, UTC+5 date boundaries, duplicate and out-of-order events, close finalization, account isolation, and future-timestamp validation.
+- [ ] Complete a no-mutation production verification of the MT5 workspace and document remaining integration risks.
+- [ ] Advance the PWA cache generation so installed and returning users activate the MT5 integrity release.

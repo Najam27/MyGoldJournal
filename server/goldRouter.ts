@@ -6,6 +6,7 @@ import { accounts, cashMovements, dailyPlans, goals, mt5Connections, mt5LivePosi
 import { getDb } from "./db";
 import { ensureAccount, getJournal, getOwnedAccount, ownsTrade } from "./goldDb";
 import { getMt5History, getMt5Workspace, syncStoredMt5PositionsToTradeLog } from "./mt5Db";
+import { mt5ApiKeyFingerprint } from "./mt5Security";
 import { toSafeJournalRecord, toSafeTrade } from "./journalPrivacy";
 import { protectedProcedure, router } from "./_core/trpc";
 import { storageGetSignedUrl, storagePut } from "./storage";
@@ -118,14 +119,20 @@ export const goldRouter = router({
       const synchronized = await syncStoredMt5PositionsToTradeLog(ctx.user.id, input.accountId);
       return { synchronized };
     }),
-    createConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), label: z.string().trim().min(1).max(120) })).mutation(async ({ ctx, input }) => {
+    createConnection: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), label: z.string().trim().min(1).max(120), brokerUtcOffsetMinutes: z.number().int().min(-12 * 60).max(14 * 60).default(180) })).mutation(async ({ ctx, input }) => {
       await getOwnedAccount(ctx.user.id, input.accountId);
       const db = await dbOrThrow();
       const existing = await db.select({ id: mt5Connections.id }).from(mt5Connections).where(and(eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId))).limit(1);
       if (existing[0]) throw new Error("This Gold Journal account already has an MT5 connection. Edit or replace it from MT5 Live.");
       const apiKey = randomBytes(32).toString("base64url");
-      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey, active: true });
+      const inserted = await db.insert(mt5Connections).values({ userId: ctx.user.id, accountId: input.accountId, label: input.label, apiKey: mt5ApiKeyFingerprint(apiKey), brokerUtcOffsetMinutes: input.brokerUtcOffsetMinutes, active: true });
       return { id: Number(inserted[0].insertId), apiKey };
+    }),
+    updateConnectionOffset: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), connectionId: z.number().int().positive(), brokerUtcOffsetMinutes: z.number().int().min(-12 * 60).max(14 * 60) })).mutation(async ({ ctx, input }) => {
+      const connection = await ownMt5Connection(ctx.user.id, input.accountId, input.connectionId);
+      const db = await dbOrThrow();
+      await db.update(mt5Connections).set({ brokerUtcOffsetMinutes: input.brokerUtcOffsetMinutes }).where(and(eq(mt5Connections.id, connection.id), eq(mt5Connections.userId, ctx.user.id), eq(mt5Connections.accountId, input.accountId)));
+      return { success: true };
     }),
     setConnectionActive: protectedProcedure.input(z.object({ accountId: z.number().int().positive(), connectionId: z.number().int().positive(), active: z.boolean() })).mutation(async ({ ctx, input }) => {
       const connection = await ownMt5Connection(ctx.user.id, input.accountId, input.connectionId);

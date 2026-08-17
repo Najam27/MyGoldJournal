@@ -3,14 +3,14 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ invalidate: vi.fn(), create: vi.fn(), setActive: vi.fn(), remove: vi.fn(), refetch: vi.fn() }));
+const mocks = vi.hoisted(() => ({ invalidate: vi.fn(), create: vi.fn(), setActive: vi.fn(), updateOffset: vi.fn(), remove: vi.fn(), refetch: vi.fn() }));
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     mt5: {
       workspace: {
         useQuery: () => ({
           data: {
-            connections: [{ id: 1, accountId: 12, accountName: "GFT 10K", label: "GFT Live", apiKey: "mt5_secret_connection_key_abcdefghijk", active: true, lastPing: new Date(), mt5Login: "90123456", brokerServer: "Broker-Live", currency: "USD", balance: "10000.00", equity: "10042.50", margin: "250.00", freeMargin: "9792.50", floatingPnl: "42.50", lastHistorySync: new Date(), historySyncedCount: 6 }],
+            connections: [{ id: 1, accountId: 12, accountName: "GFT 10K", label: "GFT Live", apiKey: "mt5_secret_connection_key_abcdefghijk", active: true, brokerUtcOffsetMinutes: 180, lastPing: new Date(), mt5Login: "90123456", brokerServer: "Broker-Live", currency: "USD", balance: "10000.00", equity: "10042.50", margin: "250.00", freeMargin: "9792.50", floatingPnl: "42.50", lastHistorySync: new Date(), historySyncedCount: 6 }],
             openPositions: [{ ticket: "123456789", symbol: "XAUUSD", direction: "BUY", lots: "0.01", openPrice: "3285.50", slPrice: "3275.00", tpPrice: "3310.00", riskUsd: "45.00", rewardUsd: "200.00", rrRatio: "4.44", floatingPnl: "12.50", openTime: new Date(), status: "OPEN" }],
             closedPositions: [{ ticket: "987654321", symbol: "XAUUSD", direction: "SELL", lots: "0.01", openPrice: "3300.00", closePrice: "3280.00", riskUsd: "50.00", rewardUsd: "100.00", rrRatio: "2.00", realizedPnl: "40.00", result: "WIN", closeTime: new Date(), journaled: false }],
           },
@@ -25,6 +25,7 @@ vi.mock("@/lib/trpc", () => ({
         }),
       },
       createConnection: { useMutation: () => ({ mutateAsync: mocks.create, isPending: false }) },
+      updateConnectionOffset: { useMutation: () => ({ mutateAsync: mocks.updateOffset }) },
       setConnectionActive: { useMutation: () => ({ mutateAsync: mocks.setActive }) },
       deleteConnection: { useMutation: () => ({ mutateAsync: mocks.remove }) },
     },
@@ -53,6 +54,7 @@ describe("Mt5LiveView", () => {
     expect(screen.getByRole("columnheader", { name: "Trade Log" })).toBeTruthy();
     expect(screen.getByText("Syncing")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Journal now" })).toBeNull();
+    expect((screen.getByRole("combobox", { name: /Broker UTC offset for GFT Live/i }) as HTMLSelectElement).value).toBe("180");
     expect(onJournalNow).not.toHaveBeenCalled();
   });
 });

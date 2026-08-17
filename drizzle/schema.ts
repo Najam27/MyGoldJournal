@@ -208,6 +208,7 @@ export const mt5Connections = mysqlTable(
     apiKey: varchar("apiKey", { length: 96 }).notNull().unique(),
     label: varchar("label", { length: 120 }).default("MT5 Connection").notNull(),
     active: boolean("active").default(true).notNull(),
+    brokerUtcOffsetMinutes: int("brokerUtcOffsetMinutes").default(180).notNull(),
     lastPing: timestamp("lastPing"),
     mt5Login: bigint("mt5Login", { mode: "bigint" }),
     brokerServer: varchar("brokerServer", { length: 160 }),

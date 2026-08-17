@@ -34,12 +34,17 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
+  app.use("/api/mt5", express.json({ limit: "256kb" }));
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerMt5Ingest(app);
   app.use(async (error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.path === "/api/mt5" && (error as { type?: string })?.type === "entity.too.large") {
+      res.status(413).json({ ok: false, code: "PAYLOAD_TOO_LARGE" });
+      return;
+    }
     if (req.path === "/api/mt5" && error instanceof SyntaxError && "body" in error) {
       const detail = error.message || "Malformed JSON request body.";
       console.warn("[MT5] malformed JSON payload", detail);
