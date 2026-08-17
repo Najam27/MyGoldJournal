@@ -69,6 +69,21 @@ async function ownMt5Connection(userId: number, accountId: number, connectionId:
   return found[0];
 }
 
+async function clearAccountJournalData(userId: number, accountId: number) {
+  await getOwnedAccount(userId, accountId);
+  const db = await dbOrThrow();
+  const resetAt = new Date();
+  await db.transaction(async tx => {
+    await tx.update(mt5Connections).set({ journalDataResetAt: resetAt, historySyncedCount: 0, lastHistorySync: null, lastHistoryStatus: "RESET", lastHistoryMessage: "Journal data was cleared; awaiting post-reset MT5 events." }).where(and(eq(mt5Connections.userId, userId), eq(mt5Connections.accountId, accountId)));
+    await tx.delete(notificationHistory).where(and(eq(notificationHistory.userId, userId), eq(notificationHistory.accountId, accountId)));
+    await tx.delete(dailyPlans).where(and(eq(dailyPlans.userId, userId), eq(dailyPlans.accountId, accountId)));
+    await tx.delete(skippedTrades).where(and(eq(skippedTrades.userId, userId), eq(skippedTrades.accountId, accountId)));
+    await tx.delete(cashMovements).where(and(eq(cashMovements.userId, userId), eq(cashMovements.accountId, accountId)));
+    await tx.delete(mt5LivePositions).where(eq(mt5LivePositions.accountId, accountId));
+    await tx.delete(trades).where(and(eq(trades.userId, userId), eq(trades.accountId, accountId)));
+  });
+}
+
 export const goldRouter = router({
   journal: router({
     bootstrap: protectedProcedure.query(({ ctx }) => ensureAccount(ctx.user.id)),
@@ -206,9 +221,7 @@ export const goldRouter = router({
       return { success: true };
     }),
     clearAll: protectedProcedure.input(accountIdInput.extend({ confirmed: z.literal(true) })).mutation(async ({ ctx, input }) => {
-      await getOwnedAccount(ctx.user.id, input.accountId);
-      const db = await dbOrThrow();
-      await db.delete(trades).where(and(eq(trades.userId, ctx.user.id), eq(trades.accountId, input.accountId)));
+      await clearAccountJournalData(ctx.user.id, input.accountId);
       return { success: true };
     }),
     uploadScreenshot: protectedProcedure.input(z.object({ tradeId: z.number().int().positive(), fileName: z.string().min(1).max(255), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]), base64: z.string().min(40).max(7_000_000) })).mutation(async ({ ctx, input }) => {

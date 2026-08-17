@@ -22,5 +22,7 @@ describe("PnlCalendarWithWeeks", () => {
     fireEvent.click(populatedDay);
     expect(populatedDay.className).toContain("selected");
     expect(populatedDay.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: /previous month/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /next month/i })).toBeTruthy();
   });
 });

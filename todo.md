@@ -194,3 +194,9 @@
 - [x] Add regressions for stale-close reconciliation, fixed UTC+5 business dates, and editing existing journal records with historical dates.
 - [x] Update the MT5 Expert Advisor so live close detection runs while history backfill is still in progress and recent terminal closes are not starved behind historical batches.
 - [ ] Advance the PWA cache generation so returning users receive the EA v1.14 setup link and corrected journal-edit date guard.
+- [x] Ensure manually closed MT5 positions finalize through live close detection and history reconciliation even when no SL or TP is hit.
+- [x] Make Clear all remove all active-account journal records and linked MT5 position/history records in one explicit, confirmed, account-scoped operation.
+- [x] Replace the P&L monthly overview's dark-incompatible native month selector with an accessible themed control.
+- [x] Add explicit Previous month and Next month calendar navigation with visible labels and correct selected-month data.
+- [x] Add regression coverage for manual close reconciliation, account-scoped clear-all completeness, themed month selection, and month navigation.
+- [x] Persist an account-scoped MT5 data-reset watermark so a cleared journal is not immediately repopulated by pre-clear history or pre-clear open-position events.

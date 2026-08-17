@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { mt5LivePositions, trades } from "../drizzle/schema";
+import { mt5Connections, mt5LivePositions, trades } from "../drizzle/schema";
 
 const store = vi.hoisted(() => ({
   positions: new Map<string, any>(),
@@ -10,7 +10,7 @@ const store = vi.hoisted(() => ({
 
 vi.mock("./db", () => ({ getDb: async () => store.db }));
 
-import { upsertMt5ClosedPosition, upsertMt5OpenPosition } from "./mt5Db";
+import { isMt5PositionAfterJournalReset, upsertMt5ClosedPosition, upsertMt5OpenPosition } from "./mt5Db";
 
 const key = (accountId: number, ticket: bigint) => `${accountId}:${ticket}`;
 const open = (ticket = 1001n) => ({ ticket, symbol: "XAUUSD", direction: "BUY" as const, lots: 0.01, openPrice: 3200, slPrice: 3190, tpPrice: 3220, riskUsd: 10, rewardUsd: 20, rrRatio: 2, floatingPnl: 1, openTime: new Date("2026-08-17T08:00:00Z") });
@@ -28,7 +28,10 @@ function installFakeDatabase() {
       target.set(targetKey, { ...(target.get(targetKey) ?? record), ...set });
     } }) }),
   };
-  store.db = { transaction: async (callback: (database: typeof tx) => Promise<unknown>) => { store.transactionCalls += 1; return callback(tx); } };
+  store.db = {
+    select: (columns: any) => ({ from: (table: unknown) => ({ where: () => ({ limit: async () => table === mt5Connections ? [{ journalDataResetAt: null }] : [] }) }) }),
+    transaction: async (callback: (database: typeof tx) => Promise<unknown>) => { store.transactionCalls += 1; return callback(tx); },
+  };
 }
 
 describe("MT5 position lifecycle", () => {
@@ -61,5 +64,11 @@ describe("MT5 position lifecycle", () => {
     expect(store.positions).toHaveLength(1);
     expect(store.positions.get(key(12, 1001n))).toMatchObject({ status: "CLOSED", realizedPnl: "10.00" });
     expect(store.journal).toHaveLength(1);
+  });
+
+  it("ignores pre-reset position events while retaining a terminal close that occurs after a clear", () => {
+    const resetAt = new Date("2026-08-17T12:00:00.000Z");
+    expect(isMt5PositionAfterJournalReset(resetAt, { status: "OPEN", openTime: new Date("2026-08-17T11:59:00.000Z") })).toBe(false);
+    expect(isMt5PositionAfterJournalReset(resetAt, { status: "CLOSED", openTime: new Date("2026-08-17T11:00:00.000Z"), closeTime: new Date("2026-08-17T12:01:00.000Z") })).toBe(true);
   });
 });

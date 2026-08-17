@@ -34,6 +34,20 @@ function safePosition(position: typeof mt5LivePositions.$inferSelect, journaledT
   };
 }
 
+export function isMt5PositionAfterJournalReset(
+  resetAt: Date | null | undefined,
+  position: { status: "OPEN" | "CLOSED"; openTime: Date; closeTime?: Date | null },
+) {
+  if (!resetAt) return true;
+  const effectiveTime = position.status === "CLOSED" ? (position.closeTime ?? position.openTime) : position.openTime;
+  return effectiveTime.getTime() > resetAt.getTime();
+}
+
+async function getJournalDataResetAt(database: any, accountId: number) {
+  const rows = await database.select({ journalDataResetAt: mt5Connections.journalDataResetAt }).from(mt5Connections).where(eq(mt5Connections.accountId, accountId)).limit(1);
+  return rows[0]?.journalDataResetAt ?? null;
+}
+
 export function pktSession(date: Date) {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Karachi", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date);
   const hour = Number(parts.find(part => part.type === "hour")?.value ?? "0");
@@ -177,8 +191,12 @@ async function syncMt5PositionToTradeLog(userId: number, accountId: number, posi
 
 export async function syncStoredMt5PositionsToTradeLog(userId: number, accountId: number) {
   const db = await requireDb();
-  const positions = await db.select().from(mt5LivePositions).where(eq(mt5LivePositions.accountId, accountId));
+  const [positions, resetAt] = await Promise.all([
+    db.select().from(mt5LivePositions).where(eq(mt5LivePositions.accountId, accountId)),
+    getJournalDataResetAt(db, accountId),
+  ]);
   for (const position of positions) {
+    if (!isMt5PositionAfterJournalReset(resetAt, position)) continue;
     const closed = position.status === "CLOSED";
     await syncMt5PositionToTradeLog(userId, accountId, {
       ticket: position.ticket,
@@ -202,6 +220,8 @@ export async function syncStoredMt5PositionsToTradeLog(userId: number, accountId
 
 export async function upsertMt5OpenPosition(userId: number, accountId: number, value: LiveBase & { floatingPnl: number }) {
   const db = await requireDb();
+  const resetAt = await getJournalDataResetAt(db, accountId);
+  if (!isMt5PositionAfterJournalReset(resetAt, { status: "OPEN", openTime: value.openTime })) return;
   const record = {
     accountId,
     ticket: value.ticket,
@@ -229,6 +249,8 @@ export async function upsertMt5OpenPosition(userId: number, accountId: number, v
 
 export async function upsertMt5ClosedPosition(userId: number, accountId: number, value: LiveBase & { closePrice: number; realizedPnl: number; result: "WIN" | "LOSS" | "BREAK_EVEN"; closeTime: Date }) {
   const db = await requireDb();
+  const resetAt = await getJournalDataResetAt(db, accountId);
+  if (!isMt5PositionAfterJournalReset(resetAt, { status: "CLOSED", openTime: value.openTime, closeTime: value.closeTime })) return;
   await db.transaction(async tx => {
     const existing = await tx.select({ status: mt5LivePositions.status, openTime: mt5LivePositions.openTime }).from(mt5LivePositions).where(and(eq(mt5LivePositions.accountId, accountId), eq(mt5LivePositions.ticket, value.ticket))).limit(1);
     if (existing[0]?.status === "CLOSED") return;

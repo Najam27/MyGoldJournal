@@ -218,6 +218,7 @@ export const mt5Connections = mysqlTable(
     margin: decimal("margin", { precision: 14, scale: 2 }),
     freeMargin: decimal("freeMargin", { precision: 14, scale: 2 }),
     floatingPnl: decimal("floatingPnl", { precision: 14, scale: 2 }),
+    journalDataResetAt: timestamp("journalDataResetAt"),
     lastHistorySync: timestamp("lastHistorySync"),
     historySyncedCount: int("historySyncedCount").default(0).notNull(),
     lastHistoryAttempt: timestamp("lastHistoryAttempt"),
