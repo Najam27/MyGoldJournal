@@ -27,6 +27,20 @@ describe("professional trader goal assessment", () => {
     expect(assessTraderGoal({ id: 11, name: "Oversize", period: "DAILY", metric: "oversize_trades", comparison: "LTE", target: 0, active: true }, behaviorRows, [], now).value).toBe(1);
   });
 
+  it("consolidates the four behavior patterns without double-counting a multi-tagged trade and evaluates journal-backed quality controls", () => {
+    const journalRows = [
+      { id: 20, tradeDate: "2026-08-12T08:00:00Z", result: "LOSS", pnl: "-30", risk: "30", reward: "60", mistake: "FOMO | Revenge" },
+      { id: 21, tradeDate: "2026-08-12T10:00:00Z", result: "WIN", pnl: "40", risk: "20", reward: "40", mistake: "Oversize" },
+      { id: 22, tradeDate: "2026-08-12T11:00:00Z", result: "WIN", pnl: "20", risk: null, reward: null, mistake: "" },
+    ];
+    const reviews = [{ planDate: "2026-08-12T03:00:00Z", overallRating: 4 }];
+    expect(assessTraderGoal({ id: 20, name: "Behavior", period: "DAILY", metric: "behavior_breaches", comparison: "LTE", target: 1, active: true }, journalRows, reviews, now)).toMatchObject({ value: 2, status: "BREACHED" });
+    expect(assessTraderGoal({ id: 21, name: "Risk", period: "WEEKLY", metric: "risk_defined_rate", comparison: "GTE", target: 60, active: true }, journalRows, reviews, now)).toMatchObject({ value: 66.66666666666666, status: "MET" });
+    expect(assessTraderGoal({ id: 22, name: "Protocol", period: "WEEKLY", metric: "session_plan_rate", comparison: "GTE", target: 100, active: true }, journalRows, reviews, now)).toMatchObject({ value: 100, status: "MET" });
+    expect(assessTraderGoal({ id: 23, name: "Review", period: "WEEKLY", metric: "process_quality", comparison: "GTE", target: 4, active: true }, journalRows, reviews, now)).toMatchObject({ value: 4, status: "MET" });
+    expect(assessTraderGoal({ id: 24, name: "Sample", period: "MONTHLY", metric: "minimum_sample", comparison: "GTE", target: 5, active: true }, journalRows, reviews, now)).toMatchObject({ value: 3, status: "IN_PROGRESS" });
+  });
+
   it("measures strategy compliance against the selected execution scope and ignores off-scope trades", () => {
     const scopedRows = [{ id: 1, tradeDate: "2026-08-12T08:00:00Z", result: "WIN", pnl: "100", session: "London", timeframe: "15m", level: "RBS | TLJ", setupQuality: "A", mistake: "" }, { id: 2, tradeDate: "2026-08-12T10:00:00Z", result: "LOSS", pnl: "-50", session: "London", timeframe: "15m", level: "RBS", setupQuality: "B", mistake: "Early entry" }, { id: 3, tradeDate: "2026-08-12T11:00:00Z", result: "WIN", pnl: "40", session: "New York", timeframe: "15m", level: "TLJ", setupQuality: "A", mistake: "" }];
     const scoped = assessTraderGoal({ id: 12, name: "London A setup", description: encodeGoalControl("Only A London entries.", { session: "London", timeframe: "15m", level: "TLJ", setupQuality: "A" }), period: "WEEKLY", metric: "strategy_compliance", comparison: "GTE", target: 80, active: true }, scopedRows, [], now);

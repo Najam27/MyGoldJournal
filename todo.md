@@ -211,3 +211,6 @@
 - [x] Add focused regression coverage for each verified hardening correction and complete full test, type, build, migration, and production validation.
 - [x] Raise the Manage accounts control above the lower-right branding overlay while retaining a separate reachable Rules & lists control at desktop and mobile breakpoints.
 - [x] Advance the PWA cache generation so returning users activate the floating-control positioning repair.
+- [x] Consolidate FOMO, revenge, overtrading, and oversizing into one account-scoped configurable behavior-discipline control while preserving existing saved controls and history.
+- [x] Research and add concise, evidence-based risk, execution, and review control types that can be tracked from existing journal fields without inventing trader data.
+- [x] Add goal-calculation, notification, and Goals-workspace regressions for the consolidated and new control types, then validate and publish the update.
