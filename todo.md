@@ -205,6 +205,10 @@
 - [x] Create a finalized responsive audit matrix listing Trade Log, MT5 Live, Goals, P&L Calendar, and Plan & Execution against 375, 768, 1280, and 1600 with explicit overflow, readability, and control-reachability findings for each cell.
 - [x] Record agent-verifiable populated-view evidence for missing non-desktop breakpoints, or explicitly document those cells as accepted only on direct trader confirmation rather than agent observation.
 - [x] Reconcile and checkpoint the detailed responsive audit matrix so shell-only and populated-authenticated evidence remain distinguishable before closing the audit tracker.
+- [x] Complete a frontend inventory and UI-smell audit across pages, components, primitives, theme implementation, states, charts, dialogs, forms, tables, and responsive layouts without changing business logic.
+- [x] Establish and apply a unified semantic light/dark design-token system and shared layout/widget patterns for trading-specific states.
+- [x] Repair frontend-only theme contrast, hardcoded presentation styles, card density, forms, tables, dialogs, charts, navigation, loading/empty/error states, and responsive behavior where audit evidence supports it.
+- [x] Add or update frontend regression coverage, perform representative light/dark and responsive visual verification, and publish a scope-limited UI/UX audit report.
 - [x] Audit and harden production environment validation so required authentication, database, OAuth, and server configuration fails safely without exposing secret values.
 - [x] Audit MT5 API-key handling, bounded rate limiting, fixed UTC+5 timestamp preservation, idempotent event ordering, safe response mapping, and terminal-close reconciliation without breaking the existing EA contract.
 - [x] Audit and make account creation/deletion plus other multi-step account-scoped data operations atomic and ownership-checked, using additive schema protections only where evidence requires them.

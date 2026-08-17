@@ -34,6 +34,16 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-profit: var(--profit);
+  --color-loss: var(--loss);
+  --color-warning: var(--warning);
+  --color-neutral: var(--neutral);
+  --color-risk: var(--risk);
+  --color-break-even: var(--break-even);
+  --color-open-trade: var(--open-trade);
+  --color-closed-trade: var(--closed-trade);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
 }
 
 :root {
@@ -70,6 +80,16 @@
   --gj-gold: #9b6915;
   --gj-gold-text: #80530b;
   --gj-shadow: rgba(26, 44, 62, .11);
+  --profit: #13794b;
+  --loss: #b43d39;
+  --warning: #9c6411;
+  --neutral: #526273;
+  --risk: #a94743;
+  --break-even: #65778a;
+  --open-trade: #236ca7;
+  --closed-trade: #536274;
+  --success: #13794b;
+  --danger: #b43d39;
 }
 
 .dark {
@@ -105,6 +125,16 @@
   --gj-gold: #e9b64b;
   --gj-gold-text: #f0cf79;
   --gj-shadow: rgba(0, 0, 0, .18);
+  --profit: #74d9a2;
+  --loss: #f38d88;
+  --warning: #f0c96f;
+  --neutral: #a2afbc;
+  --risk: #f29b96;
+  --break-even: #b0bdc8;
+  --open-trade: #7db7ef;
+  --closed-trade: #b9c5d0;
+  --success: #74d9a2;
+  --danger: #f38d88;
 }
 
 * { border-color: var(--border); }

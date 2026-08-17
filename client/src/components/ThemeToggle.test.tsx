@@ -21,8 +21,13 @@ describe("ThemeToggle", () => {
 
   it("switches the document theme, persists the user selection, and retains semantic palette tokens", () => {
     const styles = readFileSync(resolve(process.cwd(), "client/src/index.css"), "utf8");
+    const systemStyles = readFileSync(resolve(process.cwd(), "client/src/uiux-system.css"), "utf8");
     expect(styles).toMatch(/:root\s*\{[\s\S]*?--gj-shell:\s*#f6f8fb[\s\S]*?--gj-text:\s*#15202b/);
     expect(styles).toMatch(/\.dark\s*\{[\s\S]*?--gj-shell:\s*#10141a[\s\S]*?--gj-text:\s*#eef1f5/);
+    expect(styles).toMatch(/:root\s*\{[\s\S]*?--profit:[\s\S]*?--danger:/);
+    expect(styles).toMatch(/\.dark\s*\{[\s\S]*?--profit:[\s\S]*?--danger:/);
+    expect(systemStyles).toMatch(/--gj-chart-grid:[\s\S]*?--gj-fab-bottom:/);
+    expect(systemStyles).toContain("@media (prefers-reduced-motion: reduce)");
 
     render(<ThemeProvider defaultTheme="dark" switchable><ThemeToggle /></ThemeProvider>);
     expect(document.documentElement.classList.contains("dark")).toBe(true);
