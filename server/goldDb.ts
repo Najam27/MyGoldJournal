@@ -15,8 +15,8 @@ export async function ensureAccount(userId: number) {
   const db = await requireDb();
   const existing = await db.select().from(accounts).where(eq(accounts.userId, userId)).limit(1);
   if (existing[0]) return existing[0];
-  const inserted = await db.insert(accounts).values({ userId, name: "Primary Account", startingBalance: "0.00" });
-  const accountId = Number(inserted[0].insertId);
+  const inserted = await db.insert(accounts).values({ userId, name: "Primary Account", startingBalance: "0.00" }).returning({ id: accounts.id });
+  const accountId = inserted[0]?.id;
   const created = await db.select().from(accounts).where(eq(accounts.id, accountId)).limit(1);
   return created[0]!;
 }
@@ -35,7 +35,7 @@ export async function getJournal(userId: number, accountId?: number) {
   const activeAccount = await getOwnedAccount(userId, accountId);
   const [accountList, tradeList, movementList, goalList, skippedList, planList] = await Promise.all([
     db.select().from(accounts).where(eq(accounts.userId, userId)).orderBy(desc(accounts.createdAt)),
-    db.select().from(trades).where(and(eq(trades.userId, userId), eq(trades.accountId, activeAccount.id))).orderBy(desc(trades.tradeDate)),
+    db.select().from(trades).where(and(eq(trades.userId, userId), eq(trades.accountId, activeAccount.id))).orderBy(desc(trades.tradeDate)).limit(500),
     db.select().from(cashMovements).where(and(eq(cashMovements.userId, userId), eq(cashMovements.accountId, activeAccount.id))).orderBy(desc(cashMovements.movementDate)),
     db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.accountId, activeAccount.id), eq(goals.isCustom, true))).orderBy(goals.period, goals.createdAt),
     db.select().from(skippedTrades).where(and(eq(skippedTrades.userId, userId), eq(skippedTrades.accountId, activeAccount.id))).orderBy(desc(skippedTrades.tradeDate)),
