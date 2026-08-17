@@ -209,6 +209,10 @@
 - [x] Establish and apply a unified semantic light/dark design-token system and shared layout/widget patterns for trading-specific states.
 - [x] Repair frontend-only theme contrast, hardcoded presentation styles, card density, forms, tables, dialogs, charts, navigation, loading/empty/error states, and responsive behavior where audit evidence supports it.
 - [x] Add or update frontend regression coverage, perform representative light/dark and responsive visual verification, and publish a scope-limited UI/UX audit report.
+- [x] Audit the complete MT5 ownership model, account switching, query scoping, API-key ingest resolution, ticket identity, and deletion isolation against the uploaded multi-account requirements.
+- [x] Audit every visible interactive control for real handler wiring, loading/disabled/error behavior, and truthful user feedback; identify only verified non-functional controls for repair or removal.
+- [x] Audit hardcoded frontend presentation behavior, light/dark token use, and responsive constraints across pages, dialogs, tables, forms, widgets, charts, navigation, and floating controls without changing data logic.
+- [x] Implement only verified multi-account MT5, action-wiring, theme, and responsive repairs with a focused regression matrix, full validation, and a traceable production report.
 - [x] Audit and harden production environment validation so required authentication, database, OAuth, and server configuration fails safely without exposing secret values.
 - [x] Audit MT5 API-key handling, bounded rate limiting, fixed UTC+5 timestamp preservation, idempotent event ordering, safe response mapping, and terminal-close reconciliation without breaking the existing EA contract.
 - [x] Audit and make account creation/deletion plus other multi-step account-scoped data operations atomic and ownership-checked, using additive schema protections only where evidence requires them.
